@@ -1,0 +1,41 @@
+syntax = "proto3";
+option go_package = "github.com/oj-lab/user-service/userpb";
+
+import "google/protobuf/timestamp.proto";
+
+message UserToken {
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message LoginSession {
+  string id = 1;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+service AuthService {
+  rpc GetOAuthCodeURL(GetOAuthCodeURLRequest) returns (GetOAuthCodeURLResponse);
+  rpc LoginByOAuth(LoginByOAuthRequest) returns (LoginSession);
+  rpc LoginByPassword(LoginByPasswordRequest) returns (LoginSession);
+  rpc GetUserToken(GetUserTokenRequest) returns (UserToken);
+}
+
+message GetOAuthCodeURLRequest {
+  string provider = 1;
+}
+message GetOAuthCodeURLResponse { 
+  string url = 1; 
+  string state = 2;
+}
+
+message LoginByOAuthRequest {
+  string code = 1;
+  string state = 2;
+}
+
+message LoginByPasswordRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message GetUserTokenRequest { string session_id = 1; }
