@@ -55,10 +55,7 @@ func NewEnforcer() (*casbin.Enforcer, error) {
 
 // CheckPermission checks if a user role has permission to access a method
 func CheckPermission(enforcer *casbin.Enforcer, role, method string) (bool, error) {
-	// For user service methods, we'll use "read" for Get operations and "write" for Create/Update/Delete
-	action := getActionFromMethod(method)
-	
-	allowed, err := enforcer.Enforce(role, method, action)
+	allowed, err := enforcer.Enforce(role, method)
 	if err != nil {
 		return false, fmt.Errorf("failed to enforce policy: %w", err)
 	}
@@ -66,14 +63,3 @@ func CheckPermission(enforcer *casbin.Enforcer, role, method string) (bool, erro
 	return allowed, nil
 }
 
-// getActionFromMethod determines the action type based on the method name
-func getActionFromMethod(method string) string {
-	switch method {
-	case "/UserService/GetUser", "/UserService/GetCurrentUser", "/UserService/ListUsers":
-		return "read"
-	case "/UserService/CreateUser", "/UserService/UpdateUser", "/UserService/DeleteUser":
-		return "write"
-	default:
-		return "read" // Default to read for safety
-	}
-}
