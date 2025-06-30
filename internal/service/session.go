@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/oj-lab/user-service/pkg/logger"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,9 +33,12 @@ func NewSessionService(rdb redis.UniversalClient) SessionService {
 
 // CreateSession creates a new login session and stores it in Redis
 func (s *sessionService) CreateSession(ctx context.Context, userID uint) (string, error) {
+	log := logger.WithContext(ctx)
+	
 	// Generate session ID
 	sessionBytes := make([]byte, 32)
 	if _, err := rand.Read(sessionBytes); err != nil {
+		log.Error("failed to generate session ID", "error", err, "user_id", userID)
 		return "", status.Errorf(codes.Internal, "failed to generate session ID: %v", err)
 	}
 	sessionID := hex.EncodeToString(sessionBytes)
@@ -43,32 +47,48 @@ func (s *sessionService) CreateSession(ctx context.Context, userID uint) (string
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
 	err := s.rdb.Set(ctx, sessionKey, fmt.Sprintf("%d", userID), 24*time.Hour).Err()
 	if err != nil {
+		log.Error("failed to store session in redis", "error", err, "user_id", userID, "session_id", sessionID[:16])
 		return "", status.Errorf(codes.Internal, "failed to store session: %v", err)
 	}
 
+	log.Info("session created successfully", "user_id", userID, "session_id", sessionID[:16], "expires_in_hours", 24)
 	return sessionID, nil
 }
 
 // GetUserIDFromSession retrieves user ID from session and refreshes the session TTL
 func (s *sessionService) GetUserIDFromSession(ctx context.Context, sessionID string) (uint, error) {
+	log := logger.WithContext(ctx)
+	
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
 	userIDStr, err := s.rdb.Get(ctx, sessionKey).Result()
 	if err != nil {
+		log.Warn("session lookup failed", "error", "invalid or expired session", "session_id", sessionID[:min(16, len(sessionID))])
 		return 0, status.Errorf(codes.Unauthenticated, "invalid or expired session")
 	}
 
 	var userID uint
 	if _, err := fmt.Sscanf(userIDStr, "%d", &userID); err != nil {
+		log.Error("invalid session data format", "error", err, "session_id", sessionID[:min(16, len(sessionID))])
 		return 0, status.Errorf(codes.Internal, "invalid session data")
 	}
 
 	// Automatically refresh session TTL when accessed
 	if err := s.RefreshSession(ctx, sessionID); err != nil {
 		// Log the error but don't fail the request - session is still valid
-		// In a production system, you might want to log this error
+		log.Warn("session refresh failed but continuing", "error", err, "user_id", userID, "session_id", sessionID[:16])
+	} else {
+		log.Debug("session refreshed successfully", "user_id", userID, "session_id", sessionID[:16])
 	}
 
 	return userID, nil
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // RefreshSession extends the session TTL to 24 hours from now
