@@ -30,16 +30,26 @@ const (
 	// Redis configuration keys
 	RedisUrlsKey     = "redis.urls"
 	RedisPasswordKey = "redis.password"
+
+	// Session configuration keys
+	SessionExpirationHoursKey = "session.expiration_hours"
+
+	// OAuth configuration keys
+	OAuthStateExpirationMinutesKey = "oauth.state_expiration_minutes"
 )
 
 // Default values constants
 const (
-	DefaultJWTSecret = "default_jwt_secret_change_in_production"
+	DefaultJWTSecret                   = "default_jwt_secret_change_in_production"
+	DefaultSessionExpirationHours      = 24
+	DefaultOAuthStateExpirationMinutes = 10
 )
 
 type Config struct {
 	Server   ServerConfig
 	Auth     AuthConfig
+	Session  SessionConfig
+	OAuth    OAuthConfig
 	Database gorm_client.Config
 	Redis    redis_client.Config
 }
@@ -56,6 +66,14 @@ type AuthConfig struct {
 	GithubRedirectURL  string
 }
 
+type SessionConfig struct {
+	ExpirationHours uint
+}
+
+type OAuthConfig struct {
+	StateExpirationMinutes uint
+}
+
 func Load() Config {
 	cfg := Config{
 		Server: ServerConfig{
@@ -67,6 +85,12 @@ func Load() Config {
 			GithubClientID:     app.Config().GetString(AuthGithubClientIDKey),
 			GithubClientSecret: app.Config().GetString(AuthGithubClientSecretKey),
 			GithubRedirectURL:  app.Config().GetString(AuthGithubRedirectURLKey),
+		},
+		Session: SessionConfig{
+			ExpirationHours: app.Config().GetUint(SessionExpirationHoursKey),
+		},
+		OAuth: OAuthConfig{
+			StateExpirationMinutes: app.Config().GetUint(OAuthStateExpirationMinutesKey),
 		},
 		Database: gorm_client.Config{
 			Driver:   app.Config().GetString(DatabaseDriverKey),
@@ -86,6 +110,16 @@ func Load() Config {
 	// Set default JWT Secret if not provided
 	if cfg.Auth.JWTSecret == "" {
 		cfg.Auth.JWTSecret = DefaultJWTSecret
+	}
+
+	// Set default session expiration if not provided
+	if cfg.Session.ExpirationHours == 0 {
+		cfg.Session.ExpirationHours = DefaultSessionExpirationHours
+	}
+
+	// Set default OAuth state expiration if not provided
+	if cfg.OAuth.StateExpirationMinutes == 0 {
+		cfg.OAuth.StateExpirationMinutes = DefaultOAuthStateExpirationMinutes
 	}
 
 	return cfg

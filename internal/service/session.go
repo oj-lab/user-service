@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/oj-lab/user-service/configs"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,12 +22,14 @@ type SessionService interface {
 }
 
 type sessionService struct {
-	rdb redis.UniversalClient
+	rdb    redis.UniversalClient
+	config configs.SessionConfig
 }
 
-func NewSessionService(rdb redis.UniversalClient) SessionService {
+func NewSessionService(rdb redis.UniversalClient, config configs.SessionConfig) SessionService {
 	return &sessionService{
-		rdb: rdb,
+		rdb:    rdb,
+		config: config,
 	}
 }
 
@@ -39,9 +42,10 @@ func (s *sessionService) CreateSession(ctx context.Context, userID uint) (string
 	}
 	sessionID := hex.EncodeToString(sessionBytes)
 
-	// Store session in Redis with 24 hour expiration
+	// Store session in Redis with configurable expiration
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
-	err := s.rdb.Set(ctx, sessionKey, fmt.Sprintf("%d", userID), 24*time.Hour).Err()
+	sessionTTL := time.Duration(s.config.ExpirationHours) * time.Hour
+	err := s.rdb.Set(ctx, sessionKey, fmt.Sprintf("%d", userID), sessionTTL).Err()
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed to store session: %v", err)
 	}
@@ -71,10 +75,11 @@ func (s *sessionService) GetUserIDFromSession(ctx context.Context, sessionID str
 	return userID, nil
 }
 
-// RefreshSession extends the session TTL to 24 hours from now
+// RefreshSession extends the session TTL to configured duration from now
 func (s *sessionService) RefreshSession(ctx context.Context, sessionID string) error {
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
-	return s.rdb.Expire(ctx, sessionKey, 24*time.Hour).Err()
+	sessionTTL := time.Duration(s.config.ExpirationHours) * time.Hour
+	return s.rdb.Expire(ctx, sessionKey, sessionTTL).Err()
 }
 
 // GetSessionExpirationTime returns the expiration time of a session

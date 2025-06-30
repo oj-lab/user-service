@@ -50,8 +50,8 @@ func NewAuthHandler(db *gorm.DB, rdb redis.UniversalClient) *AuthHandler {
 	return &AuthHandler{
 		db:             db,
 		userRepo:       repository.NewUserRepository(db),
-		oauthService:   service.NewOAuthService(rdb),
-		sessionService: service.NewSessionService(rdb),
+		oauthService:   service.NewOAuthService(rdb, config.OAuth),
+		sessionService: service.NewSessionService(rdb, config.Session),
 		config:         config,
 		oauthConfigs:   oauthConfigs,
 	}
@@ -173,7 +173,7 @@ func (h *AuthHandler) LoginByOAuth(
 		return nil, status.Errorf(codes.Internal, "failed to create session: %v", err)
 	}
 
-	expiresAt := time.Now().Add(24 * time.Hour)
+	expiresAt := time.Now().Add(time.Duration(h.config.Session.ExpirationHours) * time.Hour)
 	return &userpb.LoginSession{
 		Id:        sessionID,
 		ExpiresAt: timestamppb.New(expiresAt),
@@ -228,7 +228,7 @@ func (h *AuthHandler) LoginByPassword(
 		return nil, status.Errorf(codes.Internal, "failed to create session: %v", err)
 	}
 
-	expiresAt := time.Now().Add(24 * time.Hour)
+	expiresAt := time.Now().Add(time.Duration(h.config.Session.ExpirationHours) * time.Hour)
 	return &userpb.LoginSession{
 		Id:        sessionID,
 		ExpiresAt: timestamppb.New(expiresAt),

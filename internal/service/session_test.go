@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/oj-lab/user-service/configs"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -21,7 +22,9 @@ func TestSessionRefresh(t *testing.T) {
 		t.Skip("Redis not available, skipping test")
 	}
 
-	sessionService := NewSessionService(rdb)
+	sessionService := NewSessionService(rdb, configs.SessionConfig{
+		ExpirationHours: 24,
+	})
 	userID := uint(123)
 
 	// Create a session
@@ -104,7 +107,9 @@ func TestGetUserIDFromSessionRefreshesSession(t *testing.T) {
 		t.Skip("Redis not available, skipping test")
 	}
 
-	sessionService := NewSessionService(rdb)
+	sessionService := NewSessionService(rdb, configs.SessionConfig{
+		ExpirationHours: 24,
+	})
 	userID := uint(456)
 
 	// Create a session

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/oj-lab/user-service/configs"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,12 +29,14 @@ type OAuthService interface {
 }
 
 type oauthService struct {
-	rdb redis.UniversalClient
+	rdb    redis.UniversalClient
+	config configs.OAuthConfig
 }
 
-func NewOAuthService(rdb redis.UniversalClient) OAuthService {
+func NewOAuthService(rdb redis.UniversalClient, config configs.OAuthConfig) OAuthService {
 	return &oauthService{
-		rdb: rdb,
+		rdb:    rdb,
+		config: config,
 	}
 }
 
@@ -51,12 +54,13 @@ func (s *oauthService) GenerateState(
 
 	// Create state data
 	now := time.Now()
+	stateTTL := time.Duration(s.config.StateExpirationMinutes) * time.Minute
 	stateData := OAuthStateData{
 		Provider:  provider,
 		UserAgent: userAgent,
 		IPAddress: ipAddress,
 		CreatedAt: now,
-		ExpiresAt: now.Add(10 * time.Minute),
+		ExpiresAt: now.Add(stateTTL),
 	}
 
 	// Store state data in Redis
@@ -66,7 +70,7 @@ func (s *oauthService) GenerateState(
 	}
 
 	stateKey := fmt.Sprintf("oauth_state:%s", state)
-	err = s.rdb.Set(ctx, stateKey, string(dataBytes), 10*time.Minute).Err()
+	err = s.rdb.Set(ctx, stateKey, string(dataBytes), stateTTL).Err()
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed to store state: %v", err)
 	}
