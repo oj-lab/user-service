@@ -13,10 +13,14 @@ type UserTokenClaims struct {
 	jwt.MapClaims
 }
 
+// NewUserTokenClaims creates a new UserTokenClaims with a default 24-hour expiration.
+// Deprecated: This function uses a hardcoded 24-hour expiration time.
+// Use NewUserTokenClaimsWithExpiration instead to specify a custom expiration time.
 func NewUserTokenClaims(userID uint64, role model.UserRole) UserTokenClaims {
 	return NewUserTokenClaimsWithExpiration(userID, role, time.Now().Add(24*time.Hour))
 }
 
+// NewUserTokenClaimsWithExpiration creates a new UserTokenClaims with a custom expiration time.
 func NewUserTokenClaimsWithExpiration(userID uint64, role model.UserRole, expiresAt time.Time) UserTokenClaims {
 	return UserTokenClaims{
 		MapClaims: jwt.MapClaims{
@@ -46,11 +50,15 @@ func (c UserTokenClaims) GetSubject() (string, error) {
 	return c.MapClaims.GetSubject()
 }
 
+// NewUserToken creates a new UserToken with a default 24-hour expiration.
+// Deprecated: This function uses a hardcoded 24-hour expiration time.
+// Use NewUserTokenWithExpiration instead to specify a custom expiration time.
 func NewUserToken(userID uint64, role model.UserRole, secret string) (*userpb.UserToken, error) {
 	expiresAt := time.Now().Add(24 * time.Hour)
 	return NewUserTokenWithExpiration(userID, role, secret, expiresAt)
 }
 
+// NewUserTokenWithExpiration creates a new UserToken with a custom expiration time.
 func NewUserTokenWithExpiration(userID uint64, role model.UserRole, secret string, expiresAt time.Time) (*userpb.UserToken, error) {
 	claims := NewUserTokenClaimsWithExpiration(userID, role, expiresAt)
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
