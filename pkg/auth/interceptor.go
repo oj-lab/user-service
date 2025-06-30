@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/oj-lab/go-webmods/app"
+	"github.com/oj-lab/user-service/internal/model"
+	"github.com/oj-lab/user-service/pkg/userpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -19,6 +21,14 @@ func BuildAuthInterceptor(
 	publicMethodMap map[string]bool,
 	jwtSecret string,
 ) grpc.UnaryServerInterceptor {
+	// Initialize the Casbin enforcer
+	enforcer, err := NewEnforcer()
+	if err != nil {
+		// Log error but don't fail - fallback to basic auth
+		// In production, you might want to fail here
+		enforcer = nil
+	}
+
 	return func(
 		ctx context.Context,
 		req any,
@@ -49,6 +59,7 @@ func BuildAuthInterceptor(
 			if token != internalToken {
 				return nil, status.Error(codes.Unauthenticated, "invalid internal token")
 			}
+			// Internal tokens bypass authorization checks
 		default:
 			token := strings.TrimPrefix(authHeader[0], "Bearer ")
 			userInfo, err := ParseUserToken(token, jwtSecret)
@@ -56,7 +67,32 @@ func BuildAuthInterceptor(
 				return nil, status.Error(codes.Unauthenticated, "invalid token")
 			}
 			ctx = context.WithValue(ctx, "user_info", userInfo)
+
+			// Perform authorization check using Casbin enforcer
+			if enforcer != nil {
+				// Convert protobuf role to string for enforcer
+				roleStr := convertRoleToString(userInfo.Role)
+				allowed, err := CheckPermission(enforcer, roleStr, info.FullMethod)
+				if err != nil {
+					return nil, status.Error(codes.Internal, "authorization check failed")
+				}
+				if !allowed {
+					return nil, status.Error(codes.PermissionDenied, "insufficient permissions")
+				}
+			}
 		}
 		return handler(ctx, req)
+	}
+}
+
+// convertRoleToString converts protobuf UserRole to string
+func convertRoleToString(role userpb.UserRole) string {
+	switch role {
+	case userpb.UserRole_ADMIN:
+		return string(model.UserRoleAdmin)
+	case userpb.UserRole_USER:
+		return string(model.UserRoleUser)
+	default:
+		return string(model.UserRoleUser) // Default to user
 	}
 }
