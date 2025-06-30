@@ -14,11 +14,15 @@ type UserTokenClaims struct {
 }
 
 func NewUserTokenClaims(userID uint64, role model.UserRole) UserTokenClaims {
+	return NewUserTokenClaimsWithExpiration(userID, role, time.Now().Add(24*time.Hour))
+}
+
+func NewUserTokenClaimsWithExpiration(userID uint64, role model.UserRole, expiresAt time.Time) UserTokenClaims {
 	return UserTokenClaims{
 		MapClaims: jwt.MapClaims{
 			"user_id":   userID,
 			"user_role": role.ToPb(),
-			"exp":       time.Now().Add(24 * time.Hour).Unix(),
+			"exp":       expiresAt.Unix(),
 		},
 	}
 }
@@ -44,7 +48,11 @@ func (c UserTokenClaims) GetSubject() (string, error) {
 
 func NewUserToken(userID uint64, role model.UserRole, secret string) (*userpb.UserToken, error) {
 	expiresAt := time.Now().Add(24 * time.Hour)
-	claims := NewUserTokenClaims(userID, role)
+	return NewUserTokenWithExpiration(userID, role, secret, expiresAt)
+}
+
+func NewUserTokenWithExpiration(userID uint64, role model.UserRole, secret string, expiresAt time.Time) (*userpb.UserToken, error) {
+	claims := NewUserTokenClaimsWithExpiration(userID, role, expiresAt)
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := jwtToken.SignedString([]byte(secret))
 	if err != nil {

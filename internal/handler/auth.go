@@ -244,10 +244,16 @@ func (h *AuthHandler) GetUserToken(
 		return nil, status.Errorf(codes.InvalidArgument, "session_id is required")
 	}
 
-	// Get user ID from session
+	// Get user ID from session (this automatically refreshes the session)
 	userID, err := h.sessionService.GetUserIDFromSession(ctx, req.SessionId)
 	if err != nil {
 		return nil, err
+	}
+
+	// Get session expiration time after refresh
+	sessionExpiresAt, err := h.sessionService.GetSessionExpirationTime(ctx, req.SessionId)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get session expiration: %v", err)
 	}
 
 	// Get user details
@@ -256,8 +262,9 @@ func (h *AuthHandler) GetUserToken(
 		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
 	}
 
-	// Generate JWT token
-	userToken, err := utils.NewUserToken(uint64(user.ID), user.Role, h.config.Auth.JWTSecret)
+	// Generate JWT token with session expiration time
+	// This ensures the token expires when the session expires
+	userToken, err := utils.NewUserTokenWithExpiration(uint64(user.ID), user.Role, h.config.Auth.JWTSecret, sessionExpiresAt)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)
 	}
