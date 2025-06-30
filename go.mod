@@ -6,7 +6,8 @@ require (
 	github.com/casbin/casbin/v2 v2.108.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/go-github/v73 v73.0.0
-	github.com/oj-lab/go-webmods v0.1.2
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
+	github.com/oj-lab/go-webmods v0.1.3
 	github.com/redis/go-redis/v9 v9.10.0
 	golang.org/x/crypto v0.39.0
 	golang.org/x/oauth2 v0.30.0
@@ -24,6 +25,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.7.5 // indirect

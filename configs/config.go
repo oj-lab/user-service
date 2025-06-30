@@ -30,17 +30,11 @@ const (
 	// Redis configuration keys
 	RedisUrlsKey     = "redis.urls"
 	RedisPasswordKey = "redis.password"
-
-	// Logging configuration keys
-	LogLevelKey  = "log.level"
-	LogFormatKey = "log.format"
 )
 
 // Default values constants
 const (
 	DefaultJWTSecret = "default_jwt_secret_change_in_production"
-	DefaultLogLevel  = "info"
-	DefaultLogFormat = "text"
 )
 
 type Config struct {
@@ -48,7 +42,6 @@ type Config struct {
 	Auth     AuthConfig
 	Database gorm_client.Config
 	Redis    redis_client.Config
-	Log      LogConfig
 }
 
 type ServerConfig struct {
@@ -61,11 +54,6 @@ type AuthConfig struct {
 	GithubClientID     string
 	GithubClientSecret string
 	GithubRedirectURL  string
-}
-
-type LogConfig struct {
-	Level  string
-	Format string
 }
 
 func Load() Config {
@@ -93,23 +81,11 @@ func Load() Config {
 			Urls:     app.Config().GetStringSlice(RedisUrlsKey),
 			Password: app.Config().GetString(RedisPasswordKey),
 		},
-		Log: LogConfig{
-			Level:  app.Config().GetString(LogLevelKey),
-			Format: app.Config().GetString(LogFormatKey),
-		},
 	}
 
 	// Set default JWT Secret if not provided
 	if cfg.Auth.JWTSecret == "" {
 		cfg.Auth.JWTSecret = DefaultJWTSecret
-	}
-
-	// Set default logging configuration if not provided
-	if cfg.Log.Level == "" {
-		cfg.Log.Level = DefaultLogLevel
-	}
-	if cfg.Log.Format == "" {
-		cfg.Log.Format = DefaultLogFormat
 	}
 
 	return cfg

@@ -12,10 +12,7 @@ github_redirect_url = "http://localhost:8080/auth/callback"
 urls = "localhost:6379"
 
 [gorm_client.database]
-driver = "postgres"
-host = "localhost"
-port = 5432
-username = "postgres"
-password = "postgres"
-name = "postgres"
+driver = "sqlite"
+
+name = "users.db"
 sslmode = "disable"

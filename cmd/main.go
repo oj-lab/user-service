@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
+	"log/slog"
 	"net"
 	"os"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/oj-lab/go-webmods/app"
 	"github.com/oj-lab/go-webmods/gorm_client"
+	"github.com/oj-lab/go-webmods/grpc_utils/interceptor"
 	"github.com/oj-lab/go-webmods/redis_client"
 	"github.com/oj-lab/user-service/configs"
 	"github.com/oj-lab/user-service/internal/handler"
@@ -14,7 +19,6 @@ import (
 	"github.com/oj-lab/user-service/internal/repository"
 	"github.com/oj-lab/user-service/internal/service"
 	"github.com/oj-lab/user-service/pkg/auth"
-	"github.com/oj-lab/user-service/pkg/logger"
 	"github.com/oj-lab/user-service/pkg/userpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -28,21 +32,23 @@ func init() {
 	app.Init(cwd)
 }
 
+// InterceptorLogger adapts slog logger to interceptor logger.
+// This code is simple enough to be copied and not imported.
+func InterceptorLogger(l *slog.Logger) logging.Logger {
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+		l.Log(ctx, slog.Level(lvl), msg, fields...)
+	})
+}
+
 func main() {
 	cfg := configs.Load()
-
-	// Initialize logger
-	logger.Init(cfg.Log)
-	logger.Info("initializing user service", "version", "1.0.0")
 
 	// Initialize database
 	db := gorm_client.NewDB(cfg.Database)
 	db.AutoMigrate(&model.UserModel{})
-	logger.Info("database initialized successfully")
 
 	// Initialize Redis client
 	rdb := redis_client.NewRDB(cfg.Redis)
-	logger.Info("redis client initialized successfully")
 
 	// Initialize repositories and services
 	userRepo := repository.NewUserRepository(db)
@@ -62,7 +68,11 @@ func main() {
 
 	// Setup gRPC server with auth interceptor
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(auth.BuildAuthInterceptor(publicMethods, cfg.Auth.JWTSecret)),
+		grpc.ChainUnaryInterceptor(
+			interceptor.RequestIDInterceptor,
+			logging.UnaryServerInterceptor(InterceptorLogger(slog.Default())),
+			auth.BuildAuthInterceptor(publicMethods, cfg.Auth.JWTSecret),
+		),
 	)
 	userpb.RegisterUserServiceServer(grpcServer, userHandler)
 	userpb.RegisterAuthServiceServer(grpcServer, authHandler)
@@ -70,11 +80,11 @@ func main() {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Server.Port))
 	if err != nil {
-		logger.Fatal("failed to listen", "error", err, "port", cfg.Server.Port)
+		log.Fatalf("failed to listen: %v", err)
 	}
-	logger.Info("user service started", "port", cfg.Server.Port)
+	slog.Info("user service started", "port", cfg.Server.Port)
 	if err := grpcServer.Serve(lis); err != nil {
-		logger.Fatal("failed to serve", "error", err)
+		log.Fatalf("failed to serve: %v", err)
 	}
 }
 

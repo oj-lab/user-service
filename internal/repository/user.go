@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/oj-lab/user-service/internal/model"
-	"github.com/oj-lab/user-service/pkg/logger"
 	"gorm.io/gorm"
 )
 
@@ -28,13 +28,12 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepository) Create(ctx context.Context, user *model.UserModel) error {
-	log := logger.WithContext(ctx)
 	err := r.db.WithContext(ctx).Create(user).Error
 	if err != nil {
-		log.Error("failed to create user", "error", err, "email", user.Email)
+		slog.ErrorContext(ctx, "failed to create user", "error", err, "email", user.Email)
 		return err
 	}
-	log.Info("user created successfully", "user_id", user.ID, "email", user.Email, "role", user.Role)
+	slog.InfoContext(ctx, "user created successfully", "user_id", user.ID, "email", user.Email, "role", user.Role)
 	return nil
 }
 
@@ -42,8 +41,10 @@ func (r *userRepository) GetByID(ctx context.Context, id uint) (*model.UserModel
 	var user model.UserModel
 	err := r.db.WithContext(ctx).First(&user, id).Error
 	if err != nil {
+		slog.ErrorContext(ctx, "failed to get user by ID", "error", err, "user_id", id)
 		return nil, err
 	}
+	slog.DebugContext(ctx, "user retrieved successfully", "user_id", user.ID, "email", user.Email)
 	return &user, nil
 }
 
@@ -69,13 +70,12 @@ func (r *userRepository) GetByGithubID(
 }
 
 func (r *userRepository) Update(ctx context.Context, user *model.UserModel) error {
-	log := logger.WithContext(ctx)
 	err := r.db.WithContext(ctx).Save(user).Error
 	if err != nil {
-		log.Error("failed to update user", "error", err, "user_id", user.ID)
+		slog.ErrorContext(ctx, "failed to update user", "error", err, "user_id", user.ID)
 		return err
 	}
-	log.Debug("user updated successfully", "user_id", user.ID, "email", user.Email)
+	slog.DebugContext(ctx, "user updated successfully", "user_id", user.ID, "email", user.Email)
 	return nil
 }
 
@@ -86,7 +86,12 @@ func (r *userRepository) Delete(ctx context.Context, id uint) error {
 func (r *userRepository) List(ctx context.Context, offset, limit int) ([]*model.UserModel, error) {
 	var users []*model.UserModel
 	err := r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error
-	return users, err
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to list users", "error", err, "offset", offset, "limit", limit)
+		return nil, err
+	}
+	slog.DebugContext(ctx, "users listed successfully", "count", len(users), "offset", offset, "limit", limit)
+	return users, nil
 }
 
 func (r *userRepository) Count(ctx context.Context) (int64, error) {
