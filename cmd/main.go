@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"log/slog"
 	"net"
 	"os"
 
@@ -16,6 +14,7 @@ import (
 	"github.com/oj-lab/user-service/internal/repository"
 	"github.com/oj-lab/user-service/internal/service"
 	"github.com/oj-lab/user-service/pkg/auth"
+	"github.com/oj-lab/user-service/pkg/logger"
 	"github.com/oj-lab/user-service/pkg/userpb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -32,12 +31,18 @@ func init() {
 func main() {
 	cfg := configs.Load()
 
+	// Initialize logger
+	logger.Init(cfg.Log)
+	logger.Info("initializing user service", "version", "1.0.0")
+
 	// Initialize database
 	db := gorm_client.NewDB(cfg.Database)
 	db.AutoMigrate(&model.UserModel{})
+	logger.Info("database initialized successfully")
 
 	// Initialize Redis client
 	rdb := redis_client.NewRDB(cfg.Redis)
+	logger.Info("redis client initialized successfully")
 
 	// Initialize repositories and services
 	userRepo := repository.NewUserRepository(db)
@@ -65,11 +70,11 @@ func main() {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Server.Port))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Fatal("failed to listen", "error", err, "port", cfg.Server.Port)
 	}
-	slog.Info("user service started", "port", cfg.Server.Port)
+	logger.Info("user service started", "port", cfg.Server.Port)
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		logger.Fatal("failed to serve", "error", err)
 	}
 }
 
