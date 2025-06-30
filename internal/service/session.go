@@ -5,9 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/oj-lab/user-service/pkg/logger"
+	requestcontext "github.com/oj-lab/user-service/pkg/context"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,7 +34,7 @@ func NewSessionService(rdb redis.UniversalClient) SessionService {
 
 // CreateSession creates a new login session and stores it in Redis
 func (s *sessionService) CreateSession(ctx context.Context, userID uint) (string, error) {
-	log := logger.WithContext(ctx)
+	log := slog.With("request_id", requestcontext.GetRequestID(ctx))
 	
 	// Generate session ID
 	sessionBytes := make([]byte, 32)
@@ -57,7 +58,7 @@ func (s *sessionService) CreateSession(ctx context.Context, userID uint) (string
 
 // GetUserIDFromSession retrieves user ID from session and refreshes the session TTL
 func (s *sessionService) GetUserIDFromSession(ctx context.Context, sessionID string) (uint, error) {
-	log := logger.WithContext(ctx)
+	log := slog.With("request_id", requestcontext.GetRequestID(ctx))
 	
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
 	userIDStr, err := s.rdb.Get(ctx, sessionKey).Result()

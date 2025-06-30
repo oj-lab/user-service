@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"strings"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"github.com/oj-lab/user-service/internal/repository"
 	"github.com/oj-lab/user-service/internal/service"
 	"github.com/oj-lab/user-service/internal/utils"
-	"github.com/oj-lab/user-service/pkg/logger"
+	requestcontext "github.com/oj-lab/user-service/pkg/context"
 	"github.com/oj-lab/user-service/pkg/userpb"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/oauth2"
@@ -72,9 +73,9 @@ func (h *AuthHandler) GetOAuthCodeURL(
 	req *userpb.GetOAuthCodeURLRequest,
 ) (*userpb.GetOAuthCodeURLResponse, error) {
 	// Generate request ID for tracing
-	requestID := logger.GenerateRequestID()
-	ctx = logger.WithRequestID(ctx, requestID)
-	log := logger.WithContext(ctx)
+	requestID := requestcontext.GenerateRequestID()
+	ctx = requestcontext.WithRequestID(ctx, requestID)
+	log := slog.With("request_id", requestID)
 
 	log.Info("oauth code url request started", 
 		"provider", req.Provider,
@@ -121,9 +122,9 @@ func (h *AuthHandler) LoginByOAuth(
 	req *userpb.LoginByOAuthRequest,
 ) (*userpb.LoginSession, error) {
 	// Generate request ID for tracing
-	requestID := logger.GenerateRequestID()
-	ctx = logger.WithRequestID(ctx, requestID)
-	log := logger.WithContext(ctx)
+	requestID := requestcontext.GenerateRequestID()
+	ctx = requestcontext.WithRequestID(ctx, requestID)
+	log := slog.With("request_id", requestID)
 
 	ipAddress := h.extractIPAddress(ctx)
 	userAgent := h.extractUserAgent(ctx)
@@ -248,9 +249,9 @@ func (h *AuthHandler) LoginByPassword(
 	req *userpb.LoginByPasswordRequest,
 ) (*userpb.LoginSession, error) {
 	// Generate request ID for tracing
-	requestID := logger.GenerateRequestID()
-	ctx = logger.WithRequestID(ctx, requestID)
-	log := logger.WithContext(ctx)
+	requestID := requestcontext.GenerateRequestID()
+	ctx = requestcontext.WithRequestID(ctx, requestID)
+	log := slog.With("request_id", requestID)
 
 	ipAddress := h.extractIPAddress(ctx)
 	userAgent := h.extractUserAgent(ctx)
@@ -330,9 +331,9 @@ func (h *AuthHandler) GetUserToken(
 	req *userpb.GetUserTokenRequest,
 ) (*userpb.UserToken, error) {
 	// Generate request ID for tracing
-	requestID := logger.GenerateRequestID()
-	ctx = logger.WithRequestID(ctx, requestID)
-	log := logger.WithContext(ctx)
+	requestID := requestcontext.GenerateRequestID()
+	ctx = requestcontext.WithRequestID(ctx, requestID)
+	log := slog.With("request_id", requestID)
 
 	log.Info("user token request started", "session_id", req.SessionId[:min(16, len(req.SessionId))])
 

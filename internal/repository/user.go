@@ -2,9 +2,10 @@ package repository
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/oj-lab/user-service/internal/model"
-	"github.com/oj-lab/user-service/pkg/logger"
+	requestcontext "github.com/oj-lab/user-service/pkg/context"
 	"gorm.io/gorm"
 )
 
@@ -28,7 +29,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepository) Create(ctx context.Context, user *model.UserModel) error {
-	log := logger.WithContext(ctx)
+	log := slog.With("request_id", requestcontext.GetRequestID(ctx))
 	err := r.db.WithContext(ctx).Create(user).Error
 	if err != nil {
 		log.Error("failed to create user", "error", err, "email", user.Email)
@@ -69,7 +70,7 @@ func (r *userRepository) GetByGithubID(
 }
 
 func (r *userRepository) Update(ctx context.Context, user *model.UserModel) error {
-	log := logger.WithContext(ctx)
+	log := slog.With("request_id", requestcontext.GetRequestID(ctx))
 	err := r.db.WithContext(ctx).Save(user).Error
 	if err != nil {
 		log.Error("failed to update user", "error", err, "user_id", user.ID)

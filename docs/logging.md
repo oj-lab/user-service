@@ -1,42 +1,82 @@
 # Logging System Documentation
 
-This document describes the improved logging system implemented for the user service.
+This document describes the logging system used in the user service.
 
 ## Overview
 
 The logging system provides:
-- **Structured logging** using Go's `slog` package
-- **Request ID correlation** for tracing requests across the system
-- **Configurable log levels** (debug, info, warn, error)
-- **Multiple output formats** (text, json)
+- **Structured logging** using Go's built-in `slog` package via go-webmods app initialization
+- **Request ID correlation** for tracing requests across the system  
+- **Configurable log levels and formats** through go-webmods configuration
 - **Context-aware logging** with automatic request metadata
 
 ## Configuration
 
-### Environment Variables
+### Log Configuration
 
-Configure logging using these environment variables:
+The logging system is automatically configured by `app.Init()` from the go-webmods package. Configuration is handled through the standard go-webmods config system.
+
+Set log configuration in your config file or environment variables:
 
 ```bash
 # Log level: debug, info, warn, error (default: info)
 LOG_LEVEL=info
 
-# Log format: text, json (default: text)
-LOG_FORMAT=text
+# Log format: json, plain-text, tint (default: tint for development)
+LOG_FORMAT=json
 ```
 
 ### Example Configurations
 
-**Development (verbose text logging):**
+**Development (colorized tint logging):**
 ```bash
 export LOG_LEVEL=debug
-export LOG_FORMAT=text
+export LOG_FORMAT=tint
 ```
 
 **Production (structured JSON logging):**
 ```bash
 export LOG_LEVEL=info
 export LOG_FORMAT=json
+```
+
+## Usage
+
+### Using slog Directly
+
+Since `app.Init()` sets up the global slog logger, you can use `slog` directly throughout the application:
+
+```go
+import "log/slog"
+
+func MyHandler(ctx context.Context) {
+    slog.Info("processing request", "user_id", 123)
+    slog.Error("operation failed", "error", err)
+}
+```
+
+### Request ID Correlation
+
+For request tracing, use the request context utilities:
+
+```go
+import (
+    "log/slog"
+    requestcontext "github.com/oj-lab/user-service/pkg/context"
+)
+
+func MyHandler(ctx context.Context, req *Request) {
+    // Generate request ID for new requests
+    requestID := requestcontext.GenerateRequestID()
+    ctx = requestcontext.WithRequestID(ctx, requestID)
+    
+    // Create logger with request ID
+    log := slog.With("request_id", requestID)
+    
+    log.Info("request started", "operation", "login")
+    // ... handle request
+    log.Info("request completed", "duration_ms", 42)
+}
 ```
 
 ## Features
@@ -118,17 +158,22 @@ level=ERROR msg="failed to create login session" error="redis connection failed"
 ### In Code
 
 ```go
-import "github.com/oj-lab/user-service/pkg/logger"
+import (
+    "log/slog"
+    requestcontext "github.com/oj-lab/user-service/pkg/context"
+)
 
 // Simple logging
-logger.Info("operation completed", "user_id", 123, "action", "login")
+slog.Info("operation completed", "user_id", 123, "action", "login")
 
-// Context-aware logging (automatically includes request ID)
-log := logger.WithContext(ctx)
+// Context-aware logging with request ID
+requestID := requestcontext.GenerateRequestID()
+ctx = requestcontext.WithRequestID(ctx, requestID)
+log := slog.With("request_id", requestID)
 log.Info("processing request", "operation", "user_creation")
 
 // Error logging with structured data
-logger.Error("database operation failed", 
+slog.Error("database operation failed", 
     "error", err, 
     "table", "users", 
     "user_id", userID)
@@ -136,15 +181,15 @@ logger.Error("database operation failed",
 
 ### Request ID Usage
 
-Request IDs are automatically generated and propagated:
+Request IDs are generated and propagated through context:
 
 ```go
 // Generate and add to context
-requestID := logger.GenerateRequestID()
-ctx = logger.WithRequestID(ctx, requestID)
+requestID := requestcontext.GenerateRequestID()
+ctx = requestcontext.WithRequestID(ctx, requestID)
 
 // All subsequent logging will include the request ID
-log := logger.WithContext(ctx)
+log := slog.With("request_id", requestID)
 log.Info("processing authenticated request", "operation", "get_user")
 ```
 
@@ -207,10 +252,12 @@ The structured logging system is designed for minimal performance impact:
 
 ## Migration Notes
 
-### Breaking Changes
-- Replaced inconsistent `log.Fatalf` and `slog.Info` with centralized logger
-- All fatal errors now use structured logging before exit
+### Current Implementation
+- Uses go-webmods `app.Init()` for logger setup instead of custom logger package
+- Leverages standard `slog` package for all logging operations
+- Request ID context utilities provided by `pkg/context` package
 
-### Backward Compatibility
-- Existing log statements continue to work during transition
-- Gradual migration path allows incremental adoption
+### Integration with go-webmods
+- Log configuration automatically handled by go-webmods configuration system
+- Global slog logger configured with hostname and command name metadata
+- Supports multiple output formats: json, plain-text, and tint (colorized)
