@@ -1,6 +1,8 @@
 package configs
 
 import (
+	"time"
+
 	"github.com/oj-lab/go-webmods/app"
 	"github.com/oj-lab/go-webmods/gorm_client"
 	"github.com/oj-lab/go-webmods/redis_client"
@@ -12,11 +14,15 @@ const (
 	ServerPortKey = "server.port"
 
 	// Auth configuration keys
-	AuthInternalTokenKey      = "auth.internal_token"
-	AuthJWTSecretKey          = "auth.jwt_secret"
-	AuthGithubClientIDKey     = "auth.github_client_id"
-	AuthGithubClientSecretKey = "auth.github_client_secret"
-	AuthGithubRedirectURLKey  = "auth.github_redirect_url"
+	AuthInternalTokenKey               = "auth.internal_token"
+	AuthJWTSecretKey                   = "auth.jwt_secret"
+	AuthGithubClientIDKey              = "auth.github_client_id"
+	AuthGithubClientSecretKey          = "auth.github_client_secret"
+	AuthGithubRedirectURLKey           = "auth.github_redirect_url"
+	AuthOAuthStateExpirationMinutesKey = "auth.oauth_state_expiration_minutes"
+
+	// Session configuration keys
+	SessionExpirationHoursKey = "session.expiration_hours"
 
 	// Database configuration keys
 	DatabaseDriverKey   = "gorm_client.database.driver"
@@ -34,12 +40,15 @@ const (
 
 // Default values constants
 const (
-	DefaultJWTSecret = "default_jwt_secret_change_in_production"
+	DefaultJWTSecret                   = "default_jwt_secret_change_in_production"
+	DefaultSessionExpirationHours      = 24
+	DefaultOAuthStateExpirationMinutes = 10
 )
 
 type Config struct {
 	Server   ServerConfig
 	Auth     AuthConfig
+	Session  SessionConfig
 	Database gorm_client.Config
 	Redis    redis_client.Config
 }
@@ -49,11 +58,16 @@ type ServerConfig struct {
 }
 
 type AuthConfig struct {
-	InternalToken      string
-	JWTSecret          string
-	GithubClientID     string
-	GithubClientSecret string
-	GithubRedirectURL  string
+	InternalToken                string
+	JWTSecret                    string
+	GithubClientID               string
+	GithubClientSecret           string
+	GithubRedirectURL            string
+	OAuthStateExpirationDuration time.Duration
+}
+
+type SessionConfig struct {
+	ExpirationDuration time.Duration
 }
 
 func Load() Config {
@@ -62,11 +76,15 @@ func Load() Config {
 			Port: app.Config().GetUint(ServerPortKey),
 		},
 		Auth: AuthConfig{
-			InternalToken:      app.Config().GetString(AuthInternalTokenKey),
-			JWTSecret:          app.Config().GetString(AuthJWTSecretKey),
-			GithubClientID:     app.Config().GetString(AuthGithubClientIDKey),
-			GithubClientSecret: app.Config().GetString(AuthGithubClientSecretKey),
-			GithubRedirectURL:  app.Config().GetString(AuthGithubRedirectURLKey),
+			InternalToken:                app.Config().GetString(AuthInternalTokenKey),
+			JWTSecret:                    app.Config().GetString(AuthJWTSecretKey),
+			GithubClientID:               app.Config().GetString(AuthGithubClientIDKey),
+			GithubClientSecret:           app.Config().GetString(AuthGithubClientSecretKey),
+			GithubRedirectURL:            app.Config().GetString(AuthGithubRedirectURLKey),
+			OAuthStateExpirationDuration: time.Duration(getIntWithDefault(AuthOAuthStateExpirationMinutesKey, DefaultOAuthStateExpirationMinutes)) * time.Minute,
+		},
+		Session: SessionConfig{
+			ExpirationDuration: time.Duration(getIntWithDefault(SessionExpirationHoursKey, DefaultSessionExpirationHours)) * time.Hour,
 		},
 		Database: gorm_client.Config{
 			Driver:   app.Config().GetString(DatabaseDriverKey),
@@ -89,4 +107,11 @@ func Load() Config {
 	}
 
 	return cfg
+}
+
+func getIntWithDefault(key string, defaultValue int) int {
+	if value := app.Config().GetInt(key); value != 0 {
+		return value
+	}
+	return defaultValue
 }

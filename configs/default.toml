@@ -7,6 +7,10 @@ jwt_secret = "jwt_secret"
 github_client_id = "github_client_id"
 github_client_secret = "github_client_secret"
 github_redirect_url = "http://localhost:8080/auth/callback"
+oauth_state_expiration_minutes = 10
+
+[session]
+expiration_hours = 24
 
 [redis]
 urls = "localhost:6379"

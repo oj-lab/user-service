@@ -29,8 +29,8 @@ func TestNewUserTokenWithExpiration(t *testing.T) {
 
 	// The token's expiration should match our custom expiration (within a few seconds)
 	tokenExpiration := token.ExpiresAt.AsTime()
-	if tokenExpiration.Before(customExpiration.Add(-5*time.Second)) || 
-	   tokenExpiration.After(customExpiration.Add(5*time.Second)) {
+	if tokenExpiration.Before(customExpiration.Add(-5*time.Second)) ||
+		tokenExpiration.After(customExpiration.Add(5*time.Second)) {
 		t.Errorf("Expected token expiration around %v, got %v", customExpiration, tokenExpiration)
 	}
 
@@ -54,10 +54,10 @@ func TestNewUserTokenWithExpiration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get expiration time from claims: %v", err)
 	}
-	
+
 	claimsExpiration := exp.Time
-	if claimsExpiration.Before(customExpiration.Add(-5*time.Second)) || 
-	   claimsExpiration.After(customExpiration.Add(5*time.Second)) {
+	if claimsExpiration.Before(customExpiration.Add(-5*time.Second)) ||
+		claimsExpiration.After(customExpiration.Add(5*time.Second)) {
 		t.Errorf("Expected claims expiration around %v, got %v", customExpiration, claimsExpiration)
 	}
 }
@@ -92,10 +92,10 @@ func TestNewUserTokenClaimsWithExpiration(t *testing.T) {
 	if !ok {
 		t.Error("Expected exp in claims")
 	}
-	
+
 	claimsExpiration := time.Unix(expUnix, 0)
-	if claimsExpiration.Before(customExpiration.Add(-5*time.Second)) || 
-	   claimsExpiration.After(customExpiration.Add(5*time.Second)) {
+	if claimsExpiration.Before(customExpiration.Add(-5*time.Second)) ||
+		claimsExpiration.After(customExpiration.Add(5*time.Second)) {
 		t.Errorf("Expected expiration around %v, got %v", customExpiration, claimsExpiration)
 	}
 }
@@ -106,7 +106,7 @@ func TestBackwardsCompatibility(t *testing.T) {
 	secret := "test-secret"
 
 	// Test that the original function still works
-	token, err := NewUserToken(userID, role, secret)
+	token, err := NewUserTokenWithExpiration(userID, role, secret, time.Now().Add(24*time.Hour))
 	if err != nil {
 		t.Fatalf("Failed to create user token: %v", err)
 	}
@@ -122,8 +122,8 @@ func TestBackwardsCompatibility(t *testing.T) {
 	// The token should expire in approximately 24 hours
 	expectedExpiration := time.Now().Add(24 * time.Hour)
 	tokenExpiration := token.ExpiresAt.AsTime()
-	if tokenExpiration.Before(expectedExpiration.Add(-time.Minute)) || 
-	   tokenExpiration.After(expectedExpiration.Add(time.Minute)) {
+	if tokenExpiration.Before(expectedExpiration.Add(-time.Minute)) ||
+		tokenExpiration.After(expectedExpiration.Add(time.Minute)) {
 		t.Errorf("Expected token expiration around %v, got %v", expectedExpiration, tokenExpiration)
 	}
 

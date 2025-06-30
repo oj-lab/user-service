@@ -34,7 +34,12 @@ type AuthHandler struct {
 	userpb.UnimplementedAuthServiceServer
 }
 
-func NewAuthHandler(db *gorm.DB, rdb redis.UniversalClient) *AuthHandler {
+func NewAuthHandler(
+	db *gorm.DB,
+	rdb redis.UniversalClient,
+	sessionService service.SessionService,
+	oauthService service.OAuthService,
+) *AuthHandler {
 	config := configs.Load()
 
 	// Initialize OAuth configurations
@@ -50,8 +55,8 @@ func NewAuthHandler(db *gorm.DB, rdb redis.UniversalClient) *AuthHandler {
 	return &AuthHandler{
 		db:             db,
 		userRepo:       repository.NewUserRepository(db),
-		oauthService:   service.NewOAuthService(rdb),
-		sessionService: service.NewSessionService(rdb),
+		oauthService:   oauthService,
+		sessionService: sessionService,
 		config:         config,
 		oauthConfigs:   oauthConfigs,
 	}
@@ -173,7 +178,12 @@ func (h *AuthHandler) LoginByOAuth(
 		return nil, status.Errorf(codes.Internal, "failed to create session: %v", err)
 	}
 
-	expiresAt := time.Now().Add(24 * time.Hour)
+	// Get session expiration time
+	expiresAt, err := h.sessionService.GetSessionExpirationTime(ctx, sessionID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get session expiration: %v", err)
+	}
+
 	return &userpb.LoginSession{
 		Id:        sessionID,
 		ExpiresAt: timestamppb.New(expiresAt),
@@ -228,7 +238,12 @@ func (h *AuthHandler) LoginByPassword(
 		return nil, status.Errorf(codes.Internal, "failed to create session: %v", err)
 	}
 
-	expiresAt := time.Now().Add(24 * time.Hour)
+	// Get session expiration time
+	expiresAt, err := h.sessionService.GetSessionExpirationTime(ctx, sessionID)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get session expiration: %v", err)
+	}
+
 	return &userpb.LoginSession{
 		Id:        sessionID,
 		ExpiresAt: timestamppb.New(expiresAt),
