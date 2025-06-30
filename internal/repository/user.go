@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/oj-lab/user-service/internal/model"
+	requestcontext "github.com/oj-lab/user-service/pkg/context"
 	"gorm.io/gorm"
 )
 
@@ -27,7 +29,14 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 }
 
 func (r *userRepository) Create(ctx context.Context, user *model.UserModel) error {
-	return r.db.WithContext(ctx).Create(user).Error
+	log := slog.With("request_id", requestcontext.GetRequestID(ctx))
+	err := r.db.WithContext(ctx).Create(user).Error
+	if err != nil {
+		log.Error("failed to create user", "error", err, "email", user.Email)
+		return err
+	}
+	log.Info("user created successfully", "user_id", user.ID, "email", user.Email, "role", user.Role)
+	return nil
 }
 
 func (r *userRepository) GetByID(ctx context.Context, id uint) (*model.UserModel, error) {
@@ -61,7 +70,14 @@ func (r *userRepository) GetByGithubID(
 }
 
 func (r *userRepository) Update(ctx context.Context, user *model.UserModel) error {
-	return r.db.WithContext(ctx).Save(user).Error
+	log := slog.With("request_id", requestcontext.GetRequestID(ctx))
+	err := r.db.WithContext(ctx).Save(user).Error
+	if err != nil {
+		log.Error("failed to update user", "error", err, "user_id", user.ID)
+		return err
+	}
+	log.Debug("user updated successfully", "user_id", user.ID, "email", user.Email)
+	return nil
 }
 
 func (r *userRepository) Delete(ctx context.Context, id uint) error {
