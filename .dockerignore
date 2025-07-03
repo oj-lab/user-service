@@ -1,0 +1,24 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+README.md
+LICENSE
+
+# Development files
+.vscode/
+.github/
+
+# Build artifacts
+bin/
+
+# Test cache
+.test-results/
+
+# Local environment files
+.env
+.env.local
+
+# Dependencies (we're using vendor/ instead)
+# Keep vendor/ for our vendored build approach

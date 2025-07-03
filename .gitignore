@@ -1,3 +1,4 @@
 bin
 __debug_bin*
 configs/development*
+vendor/

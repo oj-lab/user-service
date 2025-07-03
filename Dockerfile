@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.24 AS builder
 
 # Set working directory
 WORKDIR /app
@@ -6,26 +6,23 @@ WORKDIR /app
 # Copy go mod and sum files
 COPY go.mod go.sum ./
 
-# Download dependencies
-RUN go mod download
+# Copy vendor directory
+COPY vendor/ ./vendor/
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/user-service cmd/main.go
+# Build the application using vendor modules
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o bin/user-service cmd/main.go
 
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
-
 # Create non-root user
 RUN adduser -D -s /bin/sh appuser
 
-# Set working directory
-WORKDIR /root/
+# Set working directory to appuser's home
+WORKDIR /home/appuser
 
 # Copy the binary from builder stage
 COPY --from=builder /app/bin/user-service .
@@ -34,7 +31,7 @@ COPY --from=builder /app/bin/user-service .
 COPY --from=builder /app/configs ./configs
 
 # Change ownership to appuser
-RUN chown -R appuser:appuser /root/
+RUN chown -R appuser:appuser /home/appuser
 USER appuser
 
 # Expose port
