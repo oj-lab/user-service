@@ -16,10 +16,10 @@ expiration_hours = 24
 urls = "localhost:6379"
 
 [gorm_client.database]
-driver = "postgres"
+driver = "sqlite"
 host = "localhost"
 port = 5432
 username = "postgres"
 password = "postgres"
-name = "postgres"
+name = "users.db"
 sslmode = "disable"
