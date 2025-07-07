@@ -17,9 +17,5 @@ urls = "localhost:6379"
 
 [gorm_client.database]
 driver = "sqlite"
-host = "localhost"
-port = 5432
-username = "postgres"
-password = "postgres"
-name = "users.db"
+name = "data/users.db"
 sslmode = "disable"

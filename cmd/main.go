@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
 	"net"
 	"os"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/oj-lab/go-webmods/app"
 	"github.com/oj-lab/go-webmods/gorm_client"
+	"github.com/oj-lab/go-webmods/grpc_utils/interceptor"
 	"github.com/oj-lab/go-webmods/redis_client"
 	"github.com/oj-lab/user-service/configs"
 	"github.com/oj-lab/user-service/internal/handler"
@@ -27,6 +30,14 @@ func init() {
 	cwd, _ := os.Getwd()
 	app.SetCMDName("user_service")
 	app.Init(cwd)
+}
+
+// InterceptorLogger adapts slog logger to interceptor logger.
+// This code is simple enough to be copied and not imported.
+func InterceptorLogger(l *slog.Logger) logging.Logger {
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+		l.Log(ctx, slog.Level(lvl), msg, fields...)
+	})
 }
 
 func main() {
@@ -59,7 +70,11 @@ func main() {
 
 	// Setup gRPC server with auth interceptor
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(auth.BuildAuthInterceptor(publicMethods, cfg.Auth.JWTSecret)),
+		grpc.ChainUnaryInterceptor(
+			interceptor.RequestIDInterceptor,
+			logging.UnaryServerInterceptor(InterceptorLogger(slog.Default())),
+			auth.BuildAuthInterceptor(publicMethods, cfg.Auth.JWTSecret),
+		),
 	)
 	userpb.RegisterUserServiceServer(grpcServer, userHandler)
 	userpb.RegisterAuthServiceServer(grpcServer, authHandler)

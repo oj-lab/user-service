@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/oj-lab/user-service/configs"
@@ -38,6 +39,7 @@ func (s *sessionService) CreateSession(ctx context.Context, userID uint) (string
 	// Generate session ID
 	sessionBytes := make([]byte, 32)
 	if _, err := rand.Read(sessionBytes); err != nil {
+		slog.ErrorContext(ctx, "failed to generate session ID", "error", err, "user_id", userID)
 		return "", status.Errorf(codes.Internal, "failed to generate session ID: %v", err)
 	}
 	sessionID := hex.EncodeToString(sessionBytes)
@@ -46,9 +48,11 @@ func (s *sessionService) CreateSession(ctx context.Context, userID uint) (string
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
 	err := s.rdb.Set(ctx, sessionKey, fmt.Sprintf("%d", userID), s.cfg.Session.ExpirationDuration).Err()
 	if err != nil {
+		slog.ErrorContext(ctx, "failed to store session in redis", "error", err, "user_id", userID, "session_id", sessionID[:16])
 		return "", status.Errorf(codes.Internal, "failed to store session: %v", err)
 	}
 
+	slog.InfoContext(ctx, "session created successfully", "user_id", userID, "session_id", sessionID[:16], "expires_in_hours", 24)
 	return sessionID, nil
 }
 
@@ -57,21 +61,33 @@ func (s *sessionService) GetUserIDFromSession(ctx context.Context, sessionID str
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
 	userIDStr, err := s.rdb.Get(ctx, sessionKey).Result()
 	if err != nil {
+		slog.WarnContext(ctx, "session lookup failed", "error", "invalid or expired session", "session_id", sessionID[:min(16, len(sessionID))])
 		return 0, status.Errorf(codes.Unauthenticated, "invalid or expired session")
 	}
 
 	var userID uint
 	if _, err := fmt.Sscanf(userIDStr, "%d", &userID); err != nil {
+		slog.ErrorContext(ctx, "invalid session data format", "error", err, "session_id", sessionID[:min(16, len(sessionID))])
 		return 0, status.Errorf(codes.Internal, "invalid session data")
 	}
 
 	// Automatically refresh session TTL when accessed
 	if err := s.RefreshSession(ctx, sessionID); err != nil {
 		// Log the error but don't fail the request - session is still valid
-		// In a production system, you might want to log this error
+		slog.WarnContext(ctx, "session refresh failed but continuing", "error", err, "user_id", userID, "session_id", sessionID[:16])
+	} else {
+		slog.DebugContext(ctx, "session refreshed successfully", "user_id", userID, "session_id", sessionID[:16])
 	}
 
 	return userID, nil
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // RefreshSession extends the session TTL to configured expiration from now
