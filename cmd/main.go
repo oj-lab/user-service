@@ -53,10 +53,12 @@ func main() {
 	// Initialize repositories and services
 	userRepo := repository.NewUserRepository(db)
 	userService := service.NewUserService(userRepo)
+	sessionService := service.NewSessionService(rdb, cfg)
+	oauthService := service.NewOAuthService(rdb, cfg)
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService)
-	authHandler := handler.NewAuthHandler(db, rdb)
+	authHandler := handler.NewAuthHandler(db, rdb, sessionService, oauthService)
 
 	// Define public methods that don't require authentication
 	publicMethods := map[string]bool{

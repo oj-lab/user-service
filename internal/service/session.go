@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/oj-lab/user-service/configs"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,11 +24,13 @@ type SessionService interface {
 
 type sessionService struct {
 	rdb redis.UniversalClient
+	cfg configs.Config
 }
 
-func NewSessionService(rdb redis.UniversalClient) SessionService {
+func NewSessionService(rdb redis.UniversalClient, cfg configs.Config) SessionService {
 	return &sessionService{
 		rdb: rdb,
+		cfg: cfg,
 	}
 }
 
@@ -41,9 +44,9 @@ func (s *sessionService) CreateSession(ctx context.Context, userID uint) (string
 	}
 	sessionID := hex.EncodeToString(sessionBytes)
 
-	// Store session in Redis with 24 hour expiration
+	// Store session in Redis with configured expiration
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
-	err := s.rdb.Set(ctx, sessionKey, fmt.Sprintf("%d", userID), 24*time.Hour).Err()
+	err := s.rdb.Set(ctx, sessionKey, fmt.Sprintf("%d", userID), s.cfg.Session.ExpirationDuration).Err()
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to store session in redis", "error", err, "user_id", userID, "session_id", sessionID[:16])
 		return "", status.Errorf(codes.Internal, "failed to store session: %v", err)
@@ -87,10 +90,10 @@ func min(a, b int) int {
 	return b
 }
 
-// RefreshSession extends the session TTL to 24 hours from now
+// RefreshSession extends the session TTL to configured expiration from now
 func (s *sessionService) RefreshSession(ctx context.Context, sessionID string) error {
 	sessionKey := fmt.Sprintf("session:%s", sessionID)
-	return s.rdb.Expire(ctx, sessionKey, 24*time.Hour).Err()
+	return s.rdb.Expire(ctx, sessionKey, s.cfg.Session.ExpirationDuration).Err()
 }
 
 // GetSessionExpirationTime returns the expiration time of a session
