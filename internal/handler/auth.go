@@ -95,17 +95,28 @@ func (h *AuthHandler) GetOAuthCodeURL(
 	userAgent := h.extractUserAgent(ctx)
 	ipAddress := h.extractIPAddress(ctx)
 
-	// Generate state with embedded CSRF protection
-	state, err := h.oauthService.GenerateState(ctx, req.Provider, userAgent, ipAddress)
+	// Use custom redirect URL if provided, otherwise use default from config
+	redirectURL := req.GetRedirectUrl()
+	if redirectURL == "" {
+		redirectURL = oauthConfig.RedirectURL
+	}
+
+	// Create a copy of the OAuth config with the custom redirect URL
+	customOauthConfig := *oauthConfig
+	customOauthConfig.RedirectURL = redirectURL
+
+	// Generate state with embedded CSRF protection, including the redirect URL
+	state, err := h.oauthService.GenerateState(ctx, req.Provider, redirectURL, userAgent, ipAddress)
 	if err != nil {
 		slog.ErrorContext(ctx, "oauth state generation failed", "error", err, "provider", req.Provider)
 		return nil, err
 	}
 
-	url := oauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	url := customOauthConfig.AuthCodeURL(state, oauth2.AccessTypeOffline)
 
 	slog.InfoContext(ctx, "oauth code url generated successfully",
 		"provider", req.Provider,
+		"redirect_url", redirectURL,
 		"state_id", state[:16], // Log partial state for debugging
 		"ip_address", ipAddress)
 
@@ -138,7 +149,7 @@ func (h *AuthHandler) LoginByOAuth(
 		return nil, err
 	}
 
-	slog.InfoContext(ctx, "oauth state validated successfully", "provider", stateData.Provider)
+	slog.InfoContext(ctx, "oauth state validated successfully", "provider", stateData.Provider, "redirect_url", stateData.RedirectURL)
 
 	// Delete used state
 	h.oauthService.DeleteState(ctx, req.State)
@@ -153,8 +164,18 @@ func (h *AuthHandler) LoginByOAuth(
 		)
 	}
 
+	// Use the redirect URL from state if available, otherwise use default from config
+	redirectURL := stateData.RedirectURL
+	if redirectURL == "" {
+		redirectURL = oauthConfig.RedirectURL
+	}
+
+	// Create a copy of the OAuth config with the redirect URL from state
+	customOauthConfig := *oauthConfig
+	customOauthConfig.RedirectURL = redirectURL
+
 	// Exchange code for token
-	token, err := oauthConfig.Exchange(ctx, req.Code)
+	token, err := customOauthConfig.Exchange(ctx, req.Code)
 	if err != nil {
 		slog.ErrorContext(ctx, "oauth token exchange failed", "error", err, "provider", stateData.Provider)
 		return nil, status.Errorf(codes.Internal, "failed to exchange code for token: %v", err)
