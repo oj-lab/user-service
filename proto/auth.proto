@@ -22,6 +22,7 @@ service AuthService {
 
 message GetOAuthCodeURLRequest {
   string provider = 1;
+  optional string redirect_url = 2;
 }
 message GetOAuthCodeURLResponse { 
   string url = 1; 

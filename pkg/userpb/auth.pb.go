@@ -129,6 +129,7 @@ func (x *LoginSession) GetExpiresAt() *timestamppb.Timestamp {
 type GetOAuthCodeURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Provider      string                 `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
+	RedirectUrl   *string                `protobuf:"bytes,2,opt,name=redirect_url,json=redirectUrl,proto3,oneof" json:"redirect_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -170,10 +171,17 @@ func (x *GetOAuthCodeURLRequest) GetProvider() string {
 	return ""
 }
 
+func (x *GetOAuthCodeURLRequest) GetRedirectUrl() string {
+	if x != nil && x.RedirectUrl != nil {
+		return *x.RedirectUrl
+	}
+	return ""
+}
+
 type GetOAuthCodeURLResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"` // Return the state containing all security information
+	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -225,7 +233,7 @@ func (x *GetOAuthCodeURLResponse) GetState() string {
 type LoginByOAuthRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
-	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"` // Required: state containing all security context
+	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -383,9 +391,11 @@ const file_auth_proto_rawDesc = "" +
 	"\fLoginSession\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"4\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"m\n" +
 	"\x16GetOAuthCodeURLRequest\x12\x1a\n" +
-	"\bprovider\x18\x01 \x01(\tR\bprovider\"A\n" +
+	"\bprovider\x18\x01 \x01(\tR\bprovider\x12&\n" +
+	"\fredirect_url\x18\x02 \x01(\tH\x00R\vredirectUrl\x88\x01\x01B\x0f\n" +
+	"\r_redirect_url\"A\n" +
 	"\x17GetOAuthCodeURLResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\"?\n" +
@@ -451,6 +461,7 @@ func file_auth_proto_init() {
 	if File_auth_proto != nil {
 		return
 	}
+	file_auth_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

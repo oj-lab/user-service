@@ -15,15 +15,16 @@ import (
 )
 
 type OAuthStateData struct {
-	Provider  string    `json:"provider"`
-	UserAgent string    `json:"user_agent,omitempty"`
-	IPAddress string    `json:"ip_address,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	ExpiresAt time.Time `json:"expires_at"`
+	Provider    string    `json:"provider"`
+	RedirectURL string    `json:"redirect_url,omitempty"`
+	UserAgent   string    `json:"user_agent,omitempty"`
+	IPAddress   string    `json:"ip_address,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	ExpiresAt   time.Time `json:"expires_at"`
 }
 
 type OAuthService interface {
-	GenerateState(ctx context.Context, provider, userAgent, ipAddress string) (string, error)
+	GenerateState(ctx context.Context, provider, redirectURL, userAgent, ipAddress string) (string, error)
 	ValidateState(ctx context.Context, state, userAgent, ipAddress string) (*OAuthStateData, error)
 	DeleteState(ctx context.Context, state string) error
 }
@@ -43,7 +44,7 @@ func NewOAuthService(rdb redis.UniversalClient, cfg configs.Config) OAuthService
 // GenerateState generates a new OAuth state
 func (s *oauthService) GenerateState(
 	ctx context.Context,
-	provider, userAgent, ipAddress string,
+	provider, redirectURL, userAgent, ipAddress string,
 ) (string, error) {
 	// Generate random state
 	stateBytes := make([]byte, 32)
@@ -55,11 +56,12 @@ func (s *oauthService) GenerateState(
 	// Create state data
 	now := time.Now()
 	stateData := OAuthStateData{
-		Provider:  provider,
-		UserAgent: userAgent,
-		IPAddress: ipAddress,
-		CreatedAt: now,
-		ExpiresAt: now.Add(s.cfg.Auth.OAuthStateExpirationDuration),
+		Provider:    provider,
+		RedirectURL: redirectURL,
+		UserAgent:   userAgent,
+		IPAddress:   ipAddress,
+		CreatedAt:   now,
+		ExpiresAt:   now.Add(s.cfg.Auth.OAuthStateExpirationDuration),
 	}
 
 	// Store state data in Redis
