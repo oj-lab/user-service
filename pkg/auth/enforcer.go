@@ -15,16 +15,16 @@ func NewEnforcer() (*casbin.Enforcer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current working directory: %w", err)
 	}
-	
+
 	// Look for configs directory from current directory and parent directories
 	var modelPath, policyPath string
 	searchDir := cwd
-	
+
 	for i := 0; i < 5; i++ { // Search up to 5 levels up
 		configsDir := filepath.Join(searchDir, "configs")
 		modelCandidate := filepath.Join(configsDir, "rbac_model.conf")
 		policyCandidate := filepath.Join(configsDir, "rbac_policy.csv")
-		
+
 		if _, err := os.Stat(modelCandidate); err == nil {
 			if _, err := os.Stat(policyCandidate); err == nil {
 				modelPath = modelCandidate
@@ -32,7 +32,7 @@ func NewEnforcer() (*casbin.Enforcer, error) {
 				break
 			}
 		}
-		
+
 		// Move up one directory
 		parentDir := filepath.Dir(searchDir)
 		if parentDir == searchDir { // We've reached the root
@@ -40,16 +40,16 @@ func NewEnforcer() (*casbin.Enforcer, error) {
 		}
 		searchDir = parentDir
 	}
-	
+
 	if modelPath == "" || policyPath == "" {
 		return nil, fmt.Errorf("could not find rbac_model.conf or rbac_policy.csv in configs directory")
 	}
-	
+
 	enforcer, err := casbin.NewEnforcer(modelPath, policyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create enforcer: %w", err)
 	}
-	
+
 	return enforcer, nil
 }
 
@@ -59,7 +59,6 @@ func CheckPermission(enforcer *casbin.Enforcer, role, method string) (bool, erro
 	if err != nil {
 		return false, fmt.Errorf("failed to enforce policy: %w", err)
 	}
-	
+
 	return allowed, nil
 }
-

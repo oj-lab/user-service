@@ -15,6 +15,8 @@ import (
 
 const (
 	configKeyInternalToken = "auth.internal_token"
+
+	ContextKeyUserInfo = app.ContextKey("user_info")
 )
 
 func BuildAuthInterceptor(
@@ -66,7 +68,7 @@ func BuildAuthInterceptor(
 			if err != nil {
 				return nil, status.Error(codes.Unauthenticated, "invalid token")
 			}
-			ctx = context.WithValue(ctx, "user_info", userInfo)
+			ctx = context.WithValue(ctx, ContextKeyUserInfo, userInfo)
 
 			// Perform authorization check using Casbin enforcer
 			if enforcer != nil {

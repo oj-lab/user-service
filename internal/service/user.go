@@ -51,7 +51,7 @@ func (s *userService) GetUser(ctx context.Context, id uint64) (*userpb.User, err
 
 func (s *userService) GetCurrentUser(ctx context.Context) (*userpb.User, error) {
 	// Get user info from context (set by auth interceptor)
-	userInfo, ok := ctx.Value("user_info").(*auth.UserInfo)
+	userInfo, ok := ctx.Value(auth.ContextKeyUserInfo).(*auth.UserInfo)
 	if !ok {
 		return nil, fmt.Errorf("user info not found in context")
 	}

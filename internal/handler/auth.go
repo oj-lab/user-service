@@ -152,7 +152,11 @@ func (h *AuthHandler) LoginByOAuth(
 	slog.InfoContext(ctx, "oauth state validated successfully", "provider", stateData.Provider, "redirect_url", stateData.RedirectURL)
 
 	// Delete used state
-	h.oauthService.DeleteState(ctx, req.State)
+	err = h.oauthService.DeleteState(ctx, req.State)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to delete used oauth state", "error", err, "state_prefix", req.State[:min(16, len(req.State))])
+		return nil, status.Errorf(codes.Internal, "failed to delete used state: %v", err)
+	}
 
 	oauthConfig, exists := h.oauthConfigs[stateData.Provider]
 	if !exists {

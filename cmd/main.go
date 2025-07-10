@@ -45,7 +45,10 @@ func main() {
 
 	// Initialize database
 	db := gorm_client.NewDB(cfg.Database)
-	db.AutoMigrate(&model.UserModel{})
+	err := db.AutoMigrate(&model.UserModel{})
+	if err != nil {
+		slog.Error("failed to migrate database", "error", err)
+	}
 
 	// Initialize Redis client
 	rdb := redis_client.NewRDB(cfg.Redis)

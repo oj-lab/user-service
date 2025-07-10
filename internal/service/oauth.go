@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/oj-lab/user-service/configs"
@@ -98,7 +99,13 @@ func (s *oauthService) ValidateState(
 	// Validate expiration
 	if time.Now().After(stateData.ExpiresAt) {
 		// Clean up expired state
-		s.DeleteState(ctx, state)
+		err = s.DeleteState(ctx, state)
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to delete expired oauth state",
+				"error", err,
+				"state_prefix", state[:min(16, len(state))],
+			)
+		}
 		return nil, status.Errorf(codes.InvalidArgument, "state has expired")
 	}
 

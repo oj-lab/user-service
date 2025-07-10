@@ -135,4 +135,3 @@ func TestConvertRoleToString(t *testing.T) {
 		})
 	}
 }
-
