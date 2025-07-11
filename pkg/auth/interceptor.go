@@ -13,8 +13,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type contextKey string
-
 const (
 	configKeyInternalToken = "auth.internal_token"
 
