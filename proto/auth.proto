@@ -23,7 +23,11 @@ service AuthService {
 message GetOAuthCodeURLRequest {
   string provider = 1;
   optional string redirect_url = 2;
+  optional string auth_url = 3;
+  optional string token_url = 4;
+  optional string api_base_url = 5;
 }
+
 message GetOAuthCodeURLResponse { 
   string url = 1; 
   string state = 2;

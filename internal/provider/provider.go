@@ -17,9 +17,13 @@ type UserProvider interface {
 }
 
 func GetUserProvider(name string) (UserProvider, error) {
+	return GetUserProviderWithConfig(name, "")
+}
+
+func GetUserProviderWithConfig(name, apiBaseURL string) (UserProvider, error) {
 	switch name {
 	case "github":
-		return &GitHubProvider{}, nil
+		return NewGitHubProvider(apiBaseURL), nil
 	default:
 		return nil, fmt.Errorf("provider %s not supported", name)
 	}

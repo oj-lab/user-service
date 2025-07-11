@@ -101,12 +101,25 @@ func (h *AuthHandler) GetOAuthCodeURL(
 		redirectURL = oauthConfig.RedirectURL
 	}
 
+	authURL := req.GetAuthUrl()
+	if authURL != "" {
+		oauthConfig.Endpoint.AuthURL = authURL
+	}
+
+	tokenURL := req.GetTokenUrl()
+	if tokenURL != "" {
+		oauthConfig.Endpoint.TokenURL = tokenURL
+	}
 	// Create a copy of the OAuth config with the custom redirect URL
 	customOauthConfig := *oauthConfig
 	customOauthConfig.RedirectURL = redirectURL
+	customOauthConfig.Endpoint.AuthURL = authURL
+	customOauthConfig.Endpoint.TokenURL = tokenURL
+	// Get API base URL from request
+	apiBaseURL := req.GetApiBaseUrl()
 
 	// Generate state with embedded CSRF protection, including the redirect URL
-	state, err := h.oauthService.GenerateState(ctx, req.Provider, redirectURL, userAgent, ipAddress)
+	state, err := h.oauthService.GenerateState(ctx, req.Provider, redirectURL, authURL, tokenURL, apiBaseURL, userAgent, ipAddress)
 	if err != nil {
 		slog.ErrorContext(ctx, "oauth state generation failed", "error", err, "provider", req.Provider)
 		return nil, err
@@ -117,6 +130,9 @@ func (h *AuthHandler) GetOAuthCodeURL(
 	slog.InfoContext(ctx, "oauth code url generated successfully",
 		"provider", req.Provider,
 		"redirect_url", redirectURL,
+		"auth_url", authURL,
+		"token_url", tokenURL,
+		"api_base_url", apiBaseURL,
 		"state_id", state[:16], // Log partial state for debugging
 		"ip_address", ipAddress)
 
@@ -187,8 +203,8 @@ func (h *AuthHandler) LoginByOAuth(
 
 	slog.DebugContext(ctx, "oauth token exchange successful", "provider", stateData.Provider)
 
-	// Get user info from provider
-	userProvider, err := providerPkg.GetUserProvider(stateData.Provider)
+	// Get user info from provider with custom API base URL if available
+	userProvider, err := providerPkg.GetUserProviderWithConfig(stateData.Provider, stateData.APIBaseURL)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get user provider", "error", err, "provider", stateData.Provider)
 		return nil, status.Errorf(codes.Internal, "failed to get user provider: %v", err)

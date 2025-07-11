@@ -130,6 +130,9 @@ type GetOAuthCodeURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Provider      string                 `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
 	RedirectUrl   *string                `protobuf:"bytes,2,opt,name=redirect_url,json=redirectUrl,proto3,oneof" json:"redirect_url,omitempty"`
+	AuthUrl       *string                `protobuf:"bytes,3,opt,name=auth_url,json=authUrl,proto3,oneof" json:"auth_url,omitempty"`
+	TokenUrl      *string                `protobuf:"bytes,4,opt,name=token_url,json=tokenUrl,proto3,oneof" json:"token_url,omitempty"`
+	ApiBaseUrl    *string                `protobuf:"bytes,5,opt,name=api_base_url,json=apiBaseUrl,proto3,oneof" json:"api_base_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -174,6 +177,27 @@ func (x *GetOAuthCodeURLRequest) GetProvider() string {
 func (x *GetOAuthCodeURLRequest) GetRedirectUrl() string {
 	if x != nil && x.RedirectUrl != nil {
 		return *x.RedirectUrl
+	}
+	return ""
+}
+
+func (x *GetOAuthCodeURLRequest) GetAuthUrl() string {
+	if x != nil && x.AuthUrl != nil {
+		return *x.AuthUrl
+	}
+	return ""
+}
+
+func (x *GetOAuthCodeURLRequest) GetTokenUrl() string {
+	if x != nil && x.TokenUrl != nil {
+		return *x.TokenUrl
+	}
+	return ""
+}
+
+func (x *GetOAuthCodeURLRequest) GetApiBaseUrl() string {
+	if x != nil && x.ApiBaseUrl != nil {
+		return *x.ApiBaseUrl
 	}
 	return ""
 }
@@ -391,11 +415,19 @@ const file_auth_proto_rawDesc = "" +
 	"\fLoginSession\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"m\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x82\x02\n" +
 	"\x16GetOAuthCodeURLRequest\x12\x1a\n" +
 	"\bprovider\x18\x01 \x01(\tR\bprovider\x12&\n" +
-	"\fredirect_url\x18\x02 \x01(\tH\x00R\vredirectUrl\x88\x01\x01B\x0f\n" +
-	"\r_redirect_url\"A\n" +
+	"\fredirect_url\x18\x02 \x01(\tH\x00R\vredirectUrl\x88\x01\x01\x12\x1e\n" +
+	"\bauth_url\x18\x03 \x01(\tH\x01R\aauthUrl\x88\x01\x01\x12 \n" +
+	"\ttoken_url\x18\x04 \x01(\tH\x02R\btokenUrl\x88\x01\x01\x12%\n" +
+	"\fapi_base_url\x18\x05 \x01(\tH\x03R\n" +
+	"apiBaseUrl\x88\x01\x01B\x0f\n" +
+	"\r_redirect_urlB\v\n" +
+	"\t_auth_urlB\f\n" +
+	"\n" +
+	"_token_urlB\x0f\n" +
+	"\r_api_base_url\"A\n" +
 	"\x17GetOAuthCodeURLResponse\x12\x10\n" +
 	"\x03url\x18\x01 \x01(\tR\x03url\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\"?\n" +
