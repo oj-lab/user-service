@@ -21,7 +21,11 @@ func NewUserTokenClaims(userID uint64, role model.UserRole) UserTokenClaims {
 }
 
 // NewUserTokenClaimsWithExpiration creates a new UserTokenClaims with a custom expiration time.
-func NewUserTokenClaimsWithExpiration(userID uint64, role model.UserRole, expiresAt time.Time) UserTokenClaims {
+func NewUserTokenClaimsWithExpiration(
+	userID uint64,
+	role model.UserRole,
+	expiresAt time.Time,
+) UserTokenClaims {
 	return UserTokenClaims{
 		MapClaims: jwt.MapClaims{
 			"user_id":   userID,
@@ -34,24 +38,34 @@ func NewUserTokenClaimsWithExpiration(userID uint64, role model.UserRole, expire
 func (c UserTokenClaims) GetExpirationTime() (*jwt.NumericDate, error) {
 	return c.MapClaims.GetExpirationTime()
 }
+
 func (c UserTokenClaims) GetNotBefore() (*jwt.NumericDate, error) {
 	return c.MapClaims.GetNotBefore()
 }
+
 func (c UserTokenClaims) GetIssuedAt() (*jwt.NumericDate, error) {
 	return c.MapClaims.GetIssuedAt()
 }
+
 func (c UserTokenClaims) GetAudience() (jwt.ClaimStrings, error) {
 	return c.MapClaims.GetAudience()
 }
+
 func (c UserTokenClaims) GetIssuer() (string, error) {
 	return c.MapClaims.GetIssuer()
 }
+
 func (c UserTokenClaims) GetSubject() (string, error) {
 	return c.MapClaims.GetSubject()
 }
 
 // NewUserTokenWithExpiration creates a new UserToken with a custom expiration time.
-func NewUserTokenWithExpiration(userID uint64, role model.UserRole, secret string, expiresAt time.Time) (*userpb.UserToken, error) {
+func NewUserTokenWithExpiration(
+	userID uint64,
+	role model.UserRole,
+	secret string,
+	expiresAt time.Time,
+) (*userpb.UserToken, error) {
 	claims := NewUserTokenClaimsWithExpiration(userID, role, expiresAt)
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := jwtToken.SignedString([]byte(secret))
@@ -73,7 +87,6 @@ func ValidateUserToken(tokenString, secret string) (*UserTokenClaims, error) {
 			return []byte(secret), nil
 		},
 	)
-
 	if err != nil {
 		return nil, err
 	}

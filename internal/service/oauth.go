@@ -25,7 +25,10 @@ type OAuthStateData struct {
 }
 
 type OAuthService interface {
-	GenerateState(ctx context.Context, provider, redirectURL, userAgent, ipAddress string) (string, error)
+	GenerateState(
+		ctx context.Context,
+		provider, redirectURL, userAgent, ipAddress string,
+	) (string, error)
 	ValidateState(ctx context.Context, state, userAgent, ipAddress string) (*OAuthStateData, error)
 	DeleteState(ctx context.Context, state string) error
 }

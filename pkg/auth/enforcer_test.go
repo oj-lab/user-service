@@ -102,7 +102,13 @@ func TestEnforcer(t *testing.T) {
 				return
 			}
 			if allowed != tt.expected {
-				t.Errorf("Expected %v, got %v for role %s and method %s", tt.expected, allowed, tt.role, tt.method)
+				t.Errorf(
+					"Expected %v, got %v for role %s and method %s",
+					tt.expected,
+					allowed,
+					tt.role,
+					tt.method,
+				)
 			}
 		})
 	}

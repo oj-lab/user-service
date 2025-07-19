@@ -47,7 +47,9 @@ func TestEnforcerExamples(t *testing.T) {
 			return
 		}
 		if !allowed {
-			t.Error("Expected true permission for user role on /UserService/GetCurrentUser, got false")
+			t.Error(
+				"Expected true permission for user role on /UserService/GetCurrentUser, got false",
+			)
 		} else {
 			t.Log("✓ Correctly allowed: user role can access /UserService/GetCurrentUser")
 		}

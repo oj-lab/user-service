@@ -76,15 +76,22 @@ func Load() Config {
 			Port: app.Config().GetUint(ServerPortKey),
 		},
 		Auth: AuthConfig{
-			InternalToken:                app.Config().GetString(AuthInternalTokenKey),
-			JWTSecret:                    app.Config().GetString(AuthJWTSecretKey),
-			GithubClientID:               app.Config().GetString(AuthGithubClientIDKey),
-			GithubClientSecret:           app.Config().GetString(AuthGithubClientSecretKey),
-			GithubRedirectURL:            app.Config().GetString(AuthGithubRedirectURLKey),
-			OAuthStateExpirationDuration: time.Duration(getIntWithDefault(AuthOAuthStateExpirationMinutesKey, DefaultOAuthStateExpirationMinutes)) * time.Minute,
+			InternalToken:      app.Config().GetString(AuthInternalTokenKey),
+			JWTSecret:          app.Config().GetString(AuthJWTSecretKey),
+			GithubClientID:     app.Config().GetString(AuthGithubClientIDKey),
+			GithubClientSecret: app.Config().GetString(AuthGithubClientSecretKey),
+			GithubRedirectURL:  app.Config().GetString(AuthGithubRedirectURLKey),
+			OAuthStateExpirationDuration: time.Duration(
+				getIntWithDefault(
+					AuthOAuthStateExpirationMinutesKey,
+					DefaultOAuthStateExpirationMinutes,
+				),
+			) * time.Minute,
 		},
 		Session: SessionConfig{
-			ExpirationDuration: time.Duration(getIntWithDefault(SessionExpirationHoursKey, DefaultSessionExpirationHours)) * time.Hour,
+			ExpirationDuration: time.Duration(
+				getIntWithDefault(SessionExpirationHoursKey, DefaultSessionExpirationHours),
+			) * time.Hour,
 		},
 		Database: gorm_client.Config{
 			Driver:   app.Config().GetString(DatabaseDriverKey),

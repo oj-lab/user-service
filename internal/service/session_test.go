@@ -96,7 +96,8 @@ func TestSessionWithDifferentConfigurations(t *testing.T) {
 			}
 
 			expectedExpiration := time.Now().Add(tc.duration)
-			if expiresAt.Before(expectedExpiration.Add(-time.Second)) || expiresAt.After(expectedExpiration.Add(time.Second)) {
+			if expiresAt.Before(expectedExpiration.Add(-time.Second)) ||
+				expiresAt.After(expectedExpiration.Add(time.Second)) {
 				t.Errorf("Expected expiration around %v, got %v", expectedExpiration, expiresAt)
 			}
 
@@ -181,7 +182,11 @@ func TestSessionRefresh(t *testing.T) {
 
 	// The refreshed TTL should be greater than the TTL before refresh
 	if refreshedTTL <= ttlBeforeRefresh {
-		t.Errorf("Expected refreshed TTL (%v) to be greater than TTL before refresh (%v)", refreshedTTL, ttlBeforeRefresh)
+		t.Errorf(
+			"Expected refreshed TTL (%v) to be greater than TTL before refresh (%v)",
+			refreshedTTL,
+			ttlBeforeRefresh,
+		)
 	}
 
 	// Verify we can still get the user ID
@@ -202,7 +207,8 @@ func TestSessionRefresh(t *testing.T) {
 
 	// The expiration time should be approximately the configured duration from now
 	expectedExpiration := time.Now().Add(cfg.Session.ExpirationDuration)
-	if expiresAt.Before(expectedExpiration.Add(-time.Minute)) || expiresAt.After(expectedExpiration.Add(time.Minute)) {
+	if expiresAt.Before(expectedExpiration.Add(-time.Minute)) ||
+		expiresAt.After(expectedExpiration.Add(time.Minute)) {
 		t.Errorf("Expected expiration around %v, got %v", expectedExpiration, expiresAt)
 	}
 
@@ -266,7 +272,11 @@ func TestGetUserIDFromSessionRefreshesSession(t *testing.T) {
 
 	// The refreshed TTL should be greater than TTL before get due to automatic refresh
 	if refreshedTTL <= ttlBeforeGet {
-		t.Errorf("Expected GetUserIDFromSession to refresh session: refreshed TTL (%v) should be greater than TTL before get (%v)", refreshedTTL, ttlBeforeGet)
+		t.Errorf(
+			"Expected GetUserIDFromSession to refresh session: refreshed TTL (%v) should be greater than TTL before get (%v)",
+			refreshedTTL,
+			ttlBeforeGet,
+		)
 	}
 
 	// Clean up

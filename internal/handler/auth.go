@@ -87,7 +87,14 @@ func (h *AuthHandler) GetOAuthCodeURL(
 	}
 	oauthConfig, exists := h.oauthConfigs[req.Provider]
 	if !exists {
-		slog.WarnContext(ctx, "oauth code url request failed", "error", "unsupported provider", "provider", req.Provider)
+		slog.WarnContext(
+			ctx,
+			"oauth code url request failed",
+			"error",
+			"unsupported provider",
+			"provider",
+			req.Provider,
+		)
 		return nil, status.Errorf(codes.InvalidArgument, "unsupported provider: %s", req.Provider)
 	}
 
@@ -108,7 +115,14 @@ func (h *AuthHandler) GetOAuthCodeURL(
 	// Generate state with embedded CSRF protection, including the redirect URL
 	state, err := h.oauthService.GenerateState(ctx, req.Provider, redirectURL, userAgent, ipAddress)
 	if err != nil {
-		slog.ErrorContext(ctx, "oauth state generation failed", "error", err, "provider", req.Provider)
+		slog.ErrorContext(
+			ctx,
+			"oauth state generation failed",
+			"error",
+			err,
+			"provider",
+			req.Provider,
+		)
 		return nil, err
 	}
 
@@ -139,22 +153,54 @@ func (h *AuthHandler) LoginByOAuth(
 		"user_agent", userAgent)
 
 	if req.Code == "" || req.State == "" {
-		slog.WarnContext(ctx, "oauth login failed", "error", "code and state are required", "has_code", req.Code != "", "has_state", req.State != "")
+		slog.WarnContext(
+			ctx,
+			"oauth login failed",
+			"error",
+			"code and state are required",
+			"has_code",
+			req.Code != "",
+			"has_state",
+			req.State != "",
+		)
 		return nil, status.Errorf(codes.InvalidArgument, "code and state are required")
 	}
 
 	stateData, err := h.oauthService.ValidateState(ctx, req.State, userAgent, ipAddress)
 	if err != nil {
-		slog.WarnContext(ctx, "oauth state validation failed", "error", err, "state_prefix", req.State[:min(16, len(req.State))], "ip_address", ipAddress)
+		slog.WarnContext(
+			ctx,
+			"oauth state validation failed",
+			"error",
+			err,
+			"state_prefix",
+			req.State[:min(16, len(req.State))],
+			"ip_address",
+			ipAddress,
+		)
 		return nil, err
 	}
 
-	slog.InfoContext(ctx, "oauth state validated successfully", "provider", stateData.Provider, "redirect_url", stateData.RedirectURL)
+	slog.InfoContext(
+		ctx,
+		"oauth state validated successfully",
+		"provider",
+		stateData.Provider,
+		"redirect_url",
+		stateData.RedirectURL,
+	)
 
 	// Delete used state
 	err = h.oauthService.DeleteState(ctx, req.State)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to delete used oauth state", "error", err, "state_prefix", req.State[:min(16, len(req.State))])
+		slog.ErrorContext(
+			ctx,
+			"failed to delete used oauth state",
+			"error",
+			err,
+			"state_prefix",
+			req.State[:min(16, len(req.State))],
+		)
 		return nil, status.Errorf(codes.Internal, "failed to delete used state: %v", err)
 	}
 
@@ -181,7 +227,14 @@ func (h *AuthHandler) LoginByOAuth(
 	// Exchange code for token
 	token, err := customOauthConfig.Exchange(ctx, req.Code)
 	if err != nil {
-		slog.ErrorContext(ctx, "oauth token exchange failed", "error", err, "provider", stateData.Provider)
+		slog.ErrorContext(
+			ctx,
+			"oauth token exchange failed",
+			"error",
+			err,
+			"provider",
+			stateData.Provider,
+		)
 		return nil, status.Errorf(codes.Internal, "failed to exchange code for token: %v", err)
 	}
 
@@ -190,17 +243,40 @@ func (h *AuthHandler) LoginByOAuth(
 	// Get user info from provider
 	userProvider, err := providerPkg.GetUserProvider(stateData.Provider)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to get user provider", "error", err, "provider", stateData.Provider)
+		slog.ErrorContext(
+			ctx,
+			"failed to get user provider",
+			"error",
+			err,
+			"provider",
+			stateData.Provider,
+		)
 		return nil, status.Errorf(codes.Internal, "failed to get user provider: %v", err)
 	}
 
 	userInfo, err := userProvider.GetUserInfo(ctx, token.AccessToken)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to get user info from provider", "error", err, "provider", stateData.Provider)
+		slog.ErrorContext(
+			ctx,
+			"failed to get user info from provider",
+			"error",
+			err,
+			"provider",
+			stateData.Provider,
+		)
 		return nil, status.Errorf(codes.Internal, "failed to get user info: %v", err)
 	}
 
-	slog.InfoContext(ctx, "user info retrieved from provider", "provider", stateData.Provider, "user_id", userInfo.ID, "email", userInfo.Email)
+	slog.InfoContext(
+		ctx,
+		"user info retrieved from provider",
+		"provider",
+		stateData.Provider,
+		"user_id",
+		userInfo.ID,
+		"email",
+		userInfo.Email,
+	)
 
 	// Find or create user
 	var user *model.UserModel
@@ -208,7 +284,14 @@ func (h *AuthHandler) LoginByOAuth(
 	if stateData.Provider == "github" {
 		user, err = h.userRepo.GetByGithubID(ctx, userInfo.ID)
 		if err != nil && err != gorm.ErrRecordNotFound {
-			slog.ErrorContext(ctx, "failed to query user by github id", "error", err, "github_id", userInfo.ID)
+			slog.ErrorContext(
+				ctx,
+				"failed to query user by github id",
+				"error",
+				err,
+				"github_id",
+				userInfo.ID,
+			)
 			return nil, status.Errorf(codes.Internal, "failed to query user: %v", err)
 		}
 
@@ -225,10 +308,28 @@ func (h *AuthHandler) LoginByOAuth(
 			}
 
 			if err := h.userRepo.Create(ctx, user); err != nil {
-				slog.ErrorContext(ctx, "failed to create new user", "error", err, "email", userInfo.Email, "github_id", userInfo.ID)
+				slog.ErrorContext(
+					ctx,
+					"failed to create new user",
+					"error",
+					err,
+					"email",
+					userInfo.Email,
+					"github_id",
+					userInfo.ID,
+				)
 				return nil, status.Errorf(codes.Internal, "failed to create user: %v", err)
 			}
-			slog.InfoContext(ctx, "new user created successfully", "user_id", user.ID, "email", user.Email, "provider", stateData.Provider)
+			slog.InfoContext(
+				ctx,
+				"new user created successfully",
+				"user_id",
+				user.ID,
+				"email",
+				user.Email,
+				"provider",
+				stateData.Provider,
+			)
 		} else {
 			// Update last login
 			now := time.Now()
@@ -280,7 +381,16 @@ func (h *AuthHandler) LoginByPassword(
 		"user_agent", userAgent)
 
 	if req.Email == "" || req.Password == "" {
-		slog.WarnContext(ctx, "password login failed", "error", "email and password are required", "has_email", req.Email != "", "has_password", req.Password != "")
+		slog.WarnContext(
+			ctx,
+			"password login failed",
+			"error",
+			"email and password are required",
+			"has_email",
+			req.Email != "",
+			"has_password",
+			req.Password != "",
+		)
 		return nil, status.Errorf(codes.InvalidArgument, "email and password are required")
 	}
 
@@ -288,16 +398,41 @@ func (h *AuthHandler) LoginByPassword(
 	user, err := h.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			slog.WarnContext(ctx, "password login failed", "error", "user not found", "email", req.Email, "ip_address", ipAddress)
+			slog.WarnContext(
+				ctx,
+				"password login failed",
+				"error",
+				"user not found",
+				"email",
+				req.Email,
+				"ip_address",
+				ipAddress,
+			)
 			return nil, status.Errorf(codes.NotFound, "invalid credentials")
 		}
-		slog.ErrorContext(ctx, "failed to query user for password login", "error", err, "email", req.Email)
+		slog.ErrorContext(
+			ctx,
+			"failed to query user for password login",
+			"error",
+			err,
+			"email",
+			req.Email,
+		)
 		return nil, status.Errorf(codes.Internal, "failed to query user: %v", err)
 	}
 
 	// Check if user has a password set
 	if user.HashedPassword == nil {
-		slog.WarnContext(ctx, "password login attempt for oauth-only account", "user_id", user.ID, "email", req.Email, "ip_address", ipAddress)
+		slog.WarnContext(
+			ctx,
+			"password login attempt for oauth-only account",
+			"user_id",
+			user.ID,
+			"email",
+			req.Email,
+			"ip_address",
+			ipAddress,
+		)
 		return nil, status.Errorf(
 			codes.FailedPrecondition,
 			"password login not available for this account",
@@ -307,11 +442,31 @@ func (h *AuthHandler) LoginByPassword(
 	// Verify password
 	valid, err := utils.VerifyPassword(req.Password, *user.HashedPassword)
 	if err != nil {
-		slog.ErrorContext(ctx, "password verification error", "error", err, "user_id", user.ID, "email", req.Email)
+		slog.ErrorContext(
+			ctx,
+			"password verification error",
+			"error",
+			err,
+			"user_id",
+			user.ID,
+			"email",
+			req.Email,
+		)
 		return nil, status.Errorf(codes.Internal, "failed to verify password: %v", err)
 	}
 	if !valid {
-		slog.WarnContext(ctx, "password login failed", "error", "invalid password", "user_id", user.ID, "email", req.Email, "ip_address", ipAddress)
+		slog.WarnContext(
+			ctx,
+			"password login failed",
+			"error",
+			"invalid password",
+			"user_id",
+			user.ID,
+			"email",
+			req.Email,
+			"ip_address",
+			ipAddress,
+		)
 		return nil, status.Errorf(codes.Unauthenticated, "invalid credentials")
 	}
 
@@ -351,7 +506,12 @@ func (h *AuthHandler) GetUserToken(
 	ctx context.Context,
 	req *userpb.GetUserTokenRequest,
 ) (*userpb.UserToken, error) {
-	slog.InfoContext(ctx, "user token request started", "session_id", req.SessionId[:min(16, len(req.SessionId))])
+	slog.InfoContext(
+		ctx,
+		"user token request started",
+		"session_id",
+		req.SessionId[:min(16, len(req.SessionId))],
+	)
 
 	if req.SessionId == "" {
 		slog.WarnContext(ctx, "user token request failed", "error", "session_id is required")
@@ -361,27 +521,55 @@ func (h *AuthHandler) GetUserToken(
 	// Get user ID from session (this automatically refreshes the session)
 	userID, err := h.sessionService.GetUserIDFromSession(ctx, req.SessionId)
 	if err != nil {
-		slog.WarnContext(ctx, "user token request failed", "error", "invalid or expired session", "session_id", req.SessionId[:min(16, len(req.SessionId))])
+		slog.WarnContext(
+			ctx,
+			"user token request failed",
+			"error",
+			"invalid or expired session",
+			"session_id",
+			req.SessionId[:min(16, len(req.SessionId))],
+		)
 		return nil, err
 	}
 
 	// Get session expiration time after refresh
 	sessionExpiresAt, err := h.sessionService.GetSessionExpirationTime(ctx, req.SessionId)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to get session expiration time", "error", err, "user_id", userID, "session_id", req.SessionId[:min(16, len(req.SessionId))])
+		slog.ErrorContext(
+			ctx,
+			"failed to get session expiration time",
+			"error",
+			err,
+			"user_id",
+			userID,
+			"session_id",
+			req.SessionId[:min(16, len(req.SessionId))],
+		)
 		return nil, status.Errorf(codes.Internal, "failed to get session expiration: %v", err)
 	}
 
 	// Get user details
 	user, err := h.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to get user details for token generation", "error", err, "user_id", userID)
+		slog.ErrorContext(
+			ctx,
+			"failed to get user details for token generation",
+			"error",
+			err,
+			"user_id",
+			userID,
+		)
 		return nil, status.Errorf(codes.Internal, "failed to get user: %v", err)
 	}
 
 	// Generate JWT token with session expiration time
 	// This ensures the token expires when the session expires
-	userToken, err := utils.NewUserTokenWithExpiration(uint64(user.ID), user.Role, h.config.Auth.JWTSecret, sessionExpiresAt)
+	userToken, err := utils.NewUserTokenWithExpiration(
+		uint64(user.ID),
+		user.Role,
+		h.config.Auth.JWTSecret,
+		sessionExpiresAt,
+	)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to generate JWT token", "error", err, "user_id", user.ID)
 		return nil, status.Errorf(codes.Internal, "failed to generate token: %v", err)

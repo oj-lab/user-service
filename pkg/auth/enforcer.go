@@ -42,7 +42,9 @@ func NewEnforcer() (*casbin.Enforcer, error) {
 	}
 
 	if modelPath == "" || policyPath == "" {
-		return nil, fmt.Errorf("could not find rbac_model.conf or rbac_policy.csv in configs directory")
+		return nil, fmt.Errorf(
+			"could not find rbac_model.conf or rbac_policy.csv in configs directory",
+		)
 	}
 
 	enforcer, err := casbin.NewEnforcer(modelPath, policyPath)

@@ -73,7 +73,8 @@ docker-run:
 
 # Format code
 fmt:
-	go fmt ./...
+	gofumpt -w .
+	golines -w .
 
 # Lint code
 lint:

@@ -33,7 +33,16 @@ func (r *userRepository) Create(ctx context.Context, user *model.UserModel) erro
 		slog.ErrorContext(ctx, "failed to create user", "error", err, "email", user.Email)
 		return err
 	}
-	slog.InfoContext(ctx, "user created successfully", "user_id", user.ID, "email", user.Email, "role", user.Role)
+	slog.InfoContext(
+		ctx,
+		"user created successfully",
+		"user_id",
+		user.ID,
+		"email",
+		user.Email,
+		"role",
+		user.Role,
+	)
 	return nil
 }
 
@@ -87,10 +96,28 @@ func (r *userRepository) List(ctx context.Context, offset, limit int) ([]*model.
 	var users []*model.UserModel
 	err := r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to list users", "error", err, "offset", offset, "limit", limit)
+		slog.ErrorContext(
+			ctx,
+			"failed to list users",
+			"error",
+			err,
+			"offset",
+			offset,
+			"limit",
+			limit,
+		)
 		return nil, err
 	}
-	slog.DebugContext(ctx, "users listed successfully", "count", len(users), "offset", offset, "limit", limit)
+	slog.DebugContext(
+		ctx,
+		"users listed successfully",
+		"count",
+		len(users),
+		"offset",
+		offset,
+		"limit",
+		limit,
+	)
 	return users, nil
 }
 
