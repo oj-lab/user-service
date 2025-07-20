@@ -37,6 +37,20 @@ func (h *UserHandler) GetUser(
 	return h.userService.GetUser(ctx, req.Id)
 }
 
+func (h *UserHandler) GetUserByName(
+	ctx context.Context,
+	req *userpb.GetUserByNameRequest,
+) (*userpb.User, error) {
+	return h.userService.GetUserByName(ctx, req.Name)
+}
+
+func (h *UserHandler) GetUserByEmail(
+	ctx context.Context,
+	req *userpb.GetUserByEmailRequest,
+) (*userpb.User, error) {
+	return h.userService.GetUserByEmail(ctx, req.Email)
+}
+
 func (h *UserHandler) UpdateUser(
 	ctx context.Context,
 	req *userpb.UpdateUserRequest,

@@ -23,6 +23,8 @@ service UserService {
   rpc CreateUser(CreateUserRequest) returns (google.protobuf.Empty);
   rpc GetCurrentUser(google.protobuf.Empty) returns (User);
   rpc GetUser(GetUserRequest) returns (User);
+  rpc GetUserByName(GetUserByNameRequest) returns (User);
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (User);
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
   rpc UpdateUser(UpdateUserRequest) returns (google.protobuf.Empty);
   rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
@@ -37,6 +39,10 @@ message CreateUserRequest {
 }
 
 message GetUserRequest { uint64 id = 1; }
+
+message GetUserByNameRequest { string name = 1; }
+
+message GetUserByEmailRequest { string email = 1; }
 
 message ListUsersRequest {
   uint64 page = 1;
