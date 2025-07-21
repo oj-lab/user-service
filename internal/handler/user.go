@@ -40,7 +40,7 @@ func (h *UserHandler) GetUser(
 func (h *UserHandler) GetUserByName(
 	ctx context.Context,
 	req *userpb.GetUserByNameRequest,
-) (*userpb.User, error) {
+) (*userpb.GetUserByNameResponse, error) {
 	return h.userService.GetUserByName(ctx, req.Name)
 }
 

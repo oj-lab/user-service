@@ -13,7 +13,7 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id uint) (*model.UserModel, error)
 	GetByEmail(ctx context.Context, email string) (*model.UserModel, error)
 	GetByGithubID(ctx context.Context, githubID string) (*model.UserModel, error)
-	GetByName(ctx context.Context, name string) (*model.UserModel, error)
+	GetByName(ctx context.Context, name string) ([]*model.UserModel, error)
 	Update(ctx context.Context, user *model.UserModel) error
 	Delete(ctx context.Context, id uint) error
 	List(ctx context.Context, offset, limit int) ([]*model.UserModel, error)
@@ -131,11 +131,11 @@ func (r *userRepository) Count(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func (r *userRepository) GetByName(ctx context.Context, name string) (*model.UserModel, error) {
-	var user model.UserModel
-	err := r.db.WithContext(ctx).Where("name = ?", name).First(&user).Error
+func (r *userRepository) GetByName(ctx context.Context, name string) ([]*model.UserModel, error) {
+	var users []*model.UserModel
+	err := r.db.WithContext(ctx).Where("name = ?", name).Find(&users).Error
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return users, nil
 }
