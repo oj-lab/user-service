@@ -1,7 +1,5 @@
 p, admin, /UserService/CreateUser
 p, admin, /UserService/GetUser
-p, admin, /UserService/GetUserByName
-p, admin, /UserService/GetUserByEmail
 p, admin, /UserService/GetCurrentUser
 p, admin, /UserService/ListUsers
 p, admin, /UserService/UpdateUser
@@ -9,7 +7,5 @@ p, admin, /UserService/DeleteUser
 
 p, user, /UserService/GetCurrentUser
 p, user, /UserService/GetUser
-p, user, /UserService/GetUserByName
-p, user, /UserService/GetUserByEmail
 
 g, admin, user

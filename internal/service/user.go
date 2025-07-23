@@ -15,7 +15,6 @@ type UserService interface {
 	GetUser(ctx context.Context, id uint64) (*userpb.User, error)
 	GetCurrentUser(ctx context.Context) (*userpb.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*userpb.User, error)
-	GetUserByName(ctx context.Context, name string) (*userpb.GetUserByNameResponse, error)
 	UpdateUser(ctx context.Context, req *userpb.UpdateUserRequest) error
 	DeleteUser(ctx context.Context, id uint64) error
 	ListUsers(ctx context.Context, req *userpb.ListUsersRequest) (*userpb.ListUsersResponse, error)
@@ -66,21 +65,6 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (*userpb
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 	return user.ToPb(), nil
-}
-
-func (s *userService) GetUserByName(ctx context.Context, name string) (*userpb.GetUserByNameResponse, error) {
-	users, err := s.userRepo.GetByName(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get users by name: %w", err)
-	}
-
-	response := &userpb.GetUserByNameResponse{
-		Users: make([]*userpb.User, len(users)),
-	}
-	for i, user := range users {
-		response.Users[i] = user.ToPb()
-	}
-	return response, nil
 }
 
 func (s *userService) UpdateUser(ctx context.Context, req *userpb.UpdateUserRequest) error {
