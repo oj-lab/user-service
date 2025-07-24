@@ -15,8 +15,8 @@ type UserRepository interface {
 	GetByGithubID(ctx context.Context, githubID string) (*model.UserModel, error)
 	Update(ctx context.Context, user *model.UserModel) error
 	Delete(ctx context.Context, id uint) error
-	List(ctx context.Context, offset, limit int) ([]*model.UserModel, error)
-	Count(ctx context.Context) (int64, error)
+	List(ctx context.Context, offset, limit int, name, email *string, role *model.UserRole) ([]*model.UserModel, error)
+	Count(ctx context.Context, name, email *string, role *model.UserRole) (int64, error)
 }
 
 type userRepository struct {
@@ -92,9 +92,22 @@ func (r *userRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&model.UserModel{}, id).Error
 }
 
-func (r *userRepository) List(ctx context.Context, offset, limit int) ([]*model.UserModel, error) {
+func (r *userRepository) List(ctx context.Context, offset, limit int, name, email *string, role *model.UserRole) ([]*model.UserModel, error) {
 	var users []*model.UserModel
-	err := r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&users).Error
+	query := r.db.WithContext(ctx)
+
+	// Apply filters
+	if name != nil && *name != "" {
+		query = query.Where("name ILIKE ?", "%"+*name+"%")
+	}
+	if email != nil && *email != "" {
+		query = query.Where("email ILIKE ?", "%"+*email+"%")
+	}
+	if role != nil {
+		query = query.Where("role = ?", *role)
+	}
+
+	err := query.Offset(offset).Limit(limit).Find(&users).Error
 	if err != nil {
 		slog.ErrorContext(
 			ctx,
@@ -121,9 +134,22 @@ func (r *userRepository) List(ctx context.Context, offset, limit int) ([]*model.
 	return users, nil
 }
 
-func (r *userRepository) Count(ctx context.Context) (int64, error) {
+func (r *userRepository) Count(ctx context.Context, name, email *string, role *model.UserRole) (int64, error) {
 	var count int64
-	err := r.db.WithContext(ctx).Model(&model.UserModel{}).Count(&count).Error
+	query := r.db.WithContext(ctx).Model(&model.UserModel{})
+
+	// Apply filters
+	if name != nil && *name != "" {
+		query = query.Where("name ILIKE ?", "%"+*name+"%")
+	}
+	if email != nil && *email != "" {
+		query = query.Where("email ILIKE ?", "%"+*email+"%")
+	}
+	if role != nil {
+		query = query.Where("role = ?", *role)
+	}
+
+	err := query.Count(&count).Error
 	if err != nil {
 		return 0, err
 	}

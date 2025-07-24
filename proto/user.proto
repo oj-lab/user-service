@@ -41,6 +41,9 @@ message GetUserRequest { uint64 id = 1; }
 message ListUsersRequest {
   uint64 page = 1;
   uint64 page_size = 2;
+  optional string name = 3;
+  optional string email = 4;
+  optional UserRole role = 5;
 }
 message ListUsersResponse {
   repeated User users = 1;
