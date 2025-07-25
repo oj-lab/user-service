@@ -285,6 +285,9 @@ type ListUsersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Page          uint64                 `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      uint64                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Name          *string                `protobuf:"bytes,3,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	Email         *string                `protobuf:"bytes,4,opt,name=email,proto3,oneof" json:"email,omitempty"`
+	Role          *UserRole              `protobuf:"varint,5,opt,name=role,proto3,enum=UserRole,oneof" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -331,6 +334,27 @@ func (x *ListUsersRequest) GetPageSize() uint64 {
 		return x.PageSize
 	}
 	return 0
+}
+
+func (x *ListUsersRequest) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
+}
+
+func (x *ListUsersRequest) GetEmail() string {
+	if x != nil && x.Email != nil {
+		return *x.Email
+	}
+	return ""
+}
+
+func (x *ListUsersRequest) GetRole() UserRole {
+	if x != nil && x.Role != nil {
+		return *x.Role
+	}
+	return UserRole_USER
 }
 
 type ListUsersResponse struct {
@@ -585,10 +609,16 @@ const file_user_proto_rawDesc = "" +
 	"\n" +
 	"_github_id\" \n" +
 	"\x0eGetUserRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\"C\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\"\xb7\x01\n" +
 	"\x10ListUsersRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x04R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x04R\bpageSize\"F\n" +
+	"\tpage_size\x18\x02 \x01(\x04R\bpageSize\x12\x17\n" +
+	"\x04name\x18\x03 \x01(\tH\x00R\x04name\x88\x01\x01\x12\x19\n" +
+	"\x05email\x18\x04 \x01(\tH\x01R\x05email\x88\x01\x01\x12\"\n" +
+	"\x04role\x18\x05 \x01(\x0e2\t.UserRoleH\x02R\x04role\x88\x01\x01B\a\n" +
+	"\x05_nameB\b\n" +
+	"\x06_emailB\a\n" +
+	"\x05_role\"F\n" +
 	"\x11ListUsersResponse\x12\x1b\n" +
 	"\x05users\x18\x01 \x03(\v2\x05.UserR\x05users\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x04R\x05total\"\xf5\x01\n" +
@@ -655,25 +685,26 @@ var file_user_proto_depIdxs = []int32{
 	9,  // 1: User.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: User.role:type_name -> UserRole
 	0,  // 3: CreateUserRequest.role:type_name -> UserRole
-	1,  // 4: ListUsersResponse.users:type_name -> User
-	0,  // 5: UpdateUserRequest.role:type_name -> UserRole
-	2,  // 6: UserService.CreateUser:input_type -> CreateUserRequest
-	10, // 7: UserService.GetCurrentUser:input_type -> google.protobuf.Empty
-	3,  // 8: UserService.GetUser:input_type -> GetUserRequest
-	4,  // 9: UserService.ListUsers:input_type -> ListUsersRequest
-	6,  // 10: UserService.UpdateUser:input_type -> UpdateUserRequest
-	7,  // 11: UserService.DeleteUser:input_type -> DeleteUserRequest
-	10, // 12: UserService.CreateUser:output_type -> google.protobuf.Empty
-	1,  // 13: UserService.GetCurrentUser:output_type -> User
-	1,  // 14: UserService.GetUser:output_type -> User
-	5,  // 15: UserService.ListUsers:output_type -> ListUsersResponse
-	10, // 16: UserService.UpdateUser:output_type -> google.protobuf.Empty
-	10, // 17: UserService.DeleteUser:output_type -> google.protobuf.Empty
-	12, // [12:18] is the sub-list for method output_type
-	6,  // [6:12] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	0,  // 4: ListUsersRequest.role:type_name -> UserRole
+	1,  // 5: ListUsersResponse.users:type_name -> User
+	0,  // 6: UpdateUserRequest.role:type_name -> UserRole
+	2,  // 7: UserService.CreateUser:input_type -> CreateUserRequest
+	10, // 8: UserService.GetCurrentUser:input_type -> google.protobuf.Empty
+	3,  // 9: UserService.GetUser:input_type -> GetUserRequest
+	4,  // 10: UserService.ListUsers:input_type -> ListUsersRequest
+	6,  // 11: UserService.UpdateUser:input_type -> UpdateUserRequest
+	7,  // 12: UserService.DeleteUser:input_type -> DeleteUserRequest
+	10, // 13: UserService.CreateUser:output_type -> google.protobuf.Empty
+	1,  // 14: UserService.GetCurrentUser:output_type -> User
+	1,  // 15: UserService.GetUser:output_type -> User
+	5,  // 16: UserService.ListUsers:output_type -> ListUsersResponse
+	10, // 17: UserService.UpdateUser:output_type -> google.protobuf.Empty
+	10, // 18: UserService.DeleteUser:output_type -> google.protobuf.Empty
+	13, // [13:19] is the sub-list for method output_type
+	7,  // [7:13] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_user_proto_init() }
@@ -683,6 +714,7 @@ func file_user_proto_init() {
 	}
 	file_user_proto_msgTypes[0].OneofWrappers = []any{}
 	file_user_proto_msgTypes[1].OneofWrappers = []any{}
+	file_user_proto_msgTypes[3].OneofWrappers = []any{}
 	file_user_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
