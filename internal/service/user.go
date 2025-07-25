@@ -96,24 +96,8 @@ func (s *userService) ListUsers(
 
 	result := &userpb.ListUsersResponse{}
 
-	// Convert protobuf filters to model filters
-	var name, email *string
-	var role *model.UserRole
-
-	if req.Name != nil && *req.Name != "" {
-		name = req.Name
-	}
-	if req.Email != nil && *req.Email != "" {
-		email = req.Email
-	}
-	if req.Role != nil {
-		var roleValue model.UserRole
-		roleValue.FromPb(*req.Role)
-		role = &roleValue
-	}
-
 	// Get total count with filters
-	count, err := s.userRepo.Count(ctx, name, email, role)
+	count, err := s.userRepo.Count(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count users: %w", err)
 	}
@@ -121,7 +105,7 @@ func (s *userService) ListUsers(
 
 	// Get users with filters and pagination
 	if count > 0 {
-		users, err := s.userRepo.List(ctx, offset, limit, name, email, role)
+		users, err := s.userRepo.List(ctx, offset, limit, req)
 		if err != nil {
 			return nil, fmt.Errorf("failed to list users: %w", err)
 		}

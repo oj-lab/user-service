@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/oj-lab/user-service/internal/model"
+	"github.com/oj-lab/user-service/pkg/userpb"
 	"gorm.io/gorm"
 )
 
@@ -15,8 +16,8 @@ type UserRepository interface {
 	GetByGithubID(ctx context.Context, githubID string) (*model.UserModel, error)
 	Update(ctx context.Context, user *model.UserModel) error
 	Delete(ctx context.Context, id uint) error
-	List(ctx context.Context, offset, limit int, name, email *string, role *model.UserRole) ([]*model.UserModel, error)
-	Count(ctx context.Context, name, email *string, role *model.UserRole) (int64, error)
+	List(ctx context.Context, offset, limit int, req *userpb.ListUsersRequest) ([]*model.UserModel, error)
+	Count(ctx context.Context, req *userpb.ListUsersRequest) (int64, error)
 }
 
 type userRepository struct {
@@ -92,10 +93,10 @@ func (r *userRepository) Delete(ctx context.Context, id uint) error {
 	return r.db.WithContext(ctx).Delete(&model.UserModel{}, id).Error
 }
 
-func (r *userRepository) List(ctx context.Context, offset, limit int, name, email *string, role *model.UserRole) ([]*model.UserModel, error) {
+func (r *userRepository) List(ctx context.Context, offset, limit int, req *userpb.ListUsersRequest) ([]*model.UserModel, error) {
 	var users []*model.UserModel
 	query := r.db.WithContext(ctx)
-
+	name, email, role := req.Name, req.Email, req.Role
 	// Apply filters
 	if name != nil && *name != "" {
 		query = query.Where("name ILIKE ?", "%"+*name+"%")
@@ -104,7 +105,9 @@ func (r *userRepository) List(ctx context.Context, offset, limit int, name, emai
 		query = query.Where("email ILIKE ?", "%"+*email+"%")
 	}
 	if role != nil {
-		query = query.Where("role = ?", *role)
+		var roleValue model.UserRole
+		roleValue.FromPb(*role)
+		query = query.Where("role = ?", roleValue)
 	}
 
 	err := query.Offset(offset).Limit(limit).Find(&users).Error
@@ -134,10 +137,10 @@ func (r *userRepository) List(ctx context.Context, offset, limit int, name, emai
 	return users, nil
 }
 
-func (r *userRepository) Count(ctx context.Context, name, email *string, role *model.UserRole) (int64, error) {
+func (r *userRepository) Count(ctx context.Context, req *userpb.ListUsersRequest) (int64, error) {
 	var count int64
 	query := r.db.WithContext(ctx).Model(&model.UserModel{})
-
+	name, email, role := req.Name, req.Email, req.Role
 	// Apply filters
 	if name != nil && *name != "" {
 		query = query.Where("name ILIKE ?", "%"+*name+"%")
@@ -146,7 +149,9 @@ func (r *userRepository) Count(ctx context.Context, name, email *string, role *m
 		query = query.Where("email ILIKE ?", "%"+*email+"%")
 	}
 	if role != nil {
-		query = query.Where("role = ?", *role)
+		var roleValue model.UserRole
+		roleValue.FromPb(*role)
+		query = query.Where("role = ?", roleValue)
 	}
 
 	err := query.Count(&count).Error
